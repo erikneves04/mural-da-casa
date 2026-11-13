@@ -1,0 +1,901 @@
+<title>Mural da Casa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: o tablet do painel (casa do idoso) ao lado do celular do familiar, ligados pelo mesmo estado; controles do avaliador embaixo. */
+:root{
+  --page:#E9EEEC; --ink:#15232A; --muted:#52616A; --line:#C6D0CE; --surface:#FFFFFF;
+  --wall:#F3F6F5; --card:#FFFFFF; --accent:#0D6A65; --accent-soft:#D7ECE9; --accent-ink:#FFFFFF;
+  --ok:#1D7A3B; --no:#B3261E; --imp:#8A5200; --imp-bg:#FFEFCF; --frame:#1B2326; --chip:#E1E9E7;
+  --shadow:0 1px 2px rgba(10,30,30,.08),0 8px 24px rgba(10,30,30,.08);
+  --f-panel:"Atkinson Hyperlegible",Verdana,"Segoe UI",sans-serif;
+  --f-ui:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --page:#0E1416; --ink:#E4EDEB; --muted:#9AAAA8; --line:#2B3739; --surface:#161E20;
+  --wall:#11191B; --card:#1B2427; --accent:#4FB3A9; --accent-soft:#163533; --accent-ink:#04201D;
+  --ok:#2E8C50; --no:#C4443B; --imp:#F0B24A; --imp-bg:#3A2A0D; --frame:#05080A; --chip:#243033;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --page:#0E1416; --ink:#E4EDEB; --muted:#9AAAA8; --line:#2B3739; --surface:#161E20;
+  --wall:#11191B; --card:#1B2427; --accent:#4FB3A9; --accent-soft:#163533; --accent-ink:#04201D;
+  --ok:#2E8C50; --no:#C4443B; --imp:#F0B24A; --imp-bg:#3A2A0D; --frame:#05080A; --chip:#243033;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;padding-block:20px 16px;max-width:1240px;margin:0 auto}
+.brand h1{font-family:var(--f-panel);font-size:26px;margin:0;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.views{display:flex;gap:6px;flex-wrap:wrap}
+.views button,.ghost{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:999px;font-size:13px}
+.views button[aria-pressed="true"]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.hint{max-width:1240px;margin:0 auto 16px;color:var(--muted);font-size:13px}
+.stage{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,380px);gap:28px;align-items:start}
+.stage.only-panel{grid-template-columns:minmax(0,1fr)}
+.stage.only-app{grid-template-columns:minmax(0,1fr);justify-items:center}
+.stage.only-panel .devwrap.app,.stage.only-app .devwrap.panel{display:none}
+.devlabel{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+@media (max-width:1000px){.stage{grid-template-columns:minmax(0,1fr)}.devwrap.app{justify-self:center;width:100%;max-width:380px}}
+
+/* ---------- PAINEL (tablet) ---------- */
+.tablet{background:var(--frame);border-radius:30px;padding:16px;container-type:inline-size;box-shadow:var(--shadow)}
+.pscreen{position:relative;aspect-ratio:4/3;max-height:max(520px,calc(100dvh - 215px));overflow:hidden;border-radius:12px;background:var(--wall);font-family:var(--f-panel);
+  font-size:calc(var(--pscale,1) * max(12px,2cqw));line-height:1.3;display:flex;flex-direction:column}
+@container (max-width:620px){.pscreen{aspect-ratio:auto;height:640px}}
+.pbar{display:flex;align-items:center;gap:.8em;padding:.7em 1em;border-bottom:1px solid var(--line);min-height:3.4em}
+.pback{display:inline-flex;align-items:center;gap:.4em;border:2px solid var(--ink);background:var(--card);border-radius:.6em;padding:.35em .8em;font-weight:700;font-size:1em}
+.pclock{margin-left:auto;text-align:right;font-size:.9em;color:var(--muted)}
+.pclock b{display:block;font-size:1.5em;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+.ptitle{font-size:1.35em;font-weight:700}
+.pbody{flex:1;overflow:auto;padding:1em 1em 6.5em}
+.ptools{display:flex;gap:.5em;margin-left:auto}
+.ptools + .pclock{margin-left:.8em}
+.pgrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1em}
+@container (max-width:620px){.pgrid{grid-template-columns:minmax(0,1fr)}}
+.psec h2{font-size:1em;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 .5em}
+.plist{display:flex;flex-direction:column;gap:.55em}
+.pitem{background:var(--card);border:1px solid var(--line);border-radius:.7em;padding:.7em .8em;display:flex;flex-direction:column;gap:.35em}
+.pitem .row{display:flex;gap:.6em;align-items:baseline;justify-content:space-between}
+.pitem .t{font-size:1.25em;font-weight:700}
+.pitem .h{font-size:1.25em;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pitem .s{color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:.3em;font-size:.8em;font-weight:700;padding:.15em .55em;border-radius:999px;background:var(--imp-bg);color:var(--imp);width:fit-content}
+.badge.ok{background:var(--accent-soft);color:var(--accent)}
+.badge.gray{background:var(--chip);color:var(--muted)}
+.pacts{display:flex;flex-wrap:wrap;gap:.45em}
+.pbtn{border:2px solid var(--ink);background:var(--card);border-radius:.6em;padding:.45em .85em;font-weight:700;font-size:1em;min-height:2.6em}
+.pbtn.big{font-size:1.25em;padding:.6em 1.1em;min-height:3em}
+.pbtn.go{background:var(--ok);border-color:var(--ok);color:#fff}
+.pbtn.stop{background:var(--no);border-color:var(--no);color:#fff}
+.pbtn.acc{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pbtn[disabled]{opacity:.45;cursor:not-allowed}
+.from{font-weight:700}
+.thumbs{display:flex;gap:.5em;flex-wrap:wrap}
+.thumb{width:7.2em;aspect-ratio:4/3;border-radius:.5em;overflow:hidden;border:1px solid var(--line);padding:0;background:var(--card)}
+.thumb svg{display:block;width:100%;height:100%}
+.pdock{position:absolute;left:0;right:0;bottom:0;display:flex;gap:.6em;align-items:center;padding:.7em 6.4em .7em 1em;background:var(--wall);border-top:1px solid var(--line)}
+.mic{position:absolute;right:1em;bottom:1.3em;width:4.2em;height:4.2em;border-radius:50%;border:none;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:var(--shadow);z-index:5}
+.mic svg{width:1.9em;height:1.9em}
+.mic small{position:absolute;bottom:-1.2em;font-size:.65em;color:var(--muted);white-space:nowrap}
+.pbanner{margin:.6em 1em 0;background:var(--imp-bg);color:var(--ink);border:2px solid var(--imp);border-radius:.7em;padding:.6em .8em;display:flex;gap:.8em;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.pbanner b{color:var(--imp)}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:.8em;min-height:100%}
+.huge{font-size:2em;font-weight:700;line-height:1.15;text-wrap:balance}
+.transcr{background:var(--card);border:2px solid var(--line);border-radius:.7em;padding:.8em 1em;font-size:1.6em;font-weight:700;line-height:1.25;text-wrap:pretty}
+.choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(14em,1fr));gap:.6em}
+.choice{text-align:left;background:var(--card);border:2px solid var(--line);border-radius:.7em;padding:.8em;font-size:1.15em;font-weight:700}
+.stepper{display:flex;align-items:center;gap:.6em;flex-wrap:wrap}
+.stepper .val{min-width:7em;text-align:center;font-size:1.4em;font-weight:700;font-variant-numeric:tabular-nums}
+.sq{width:2.6em;height:2.6em;border-radius:.6em;border:2px solid var(--ink);background:var(--card);font-size:1.3em;font-weight:700}
+.toggle{display:flex;align-items:center;gap:.6em;background:var(--card);border:2px solid var(--line);border-radius:.6em;padding:.45em .7em;font-weight:700}
+.toggle .sw{width:2.6em;height:1.5em;border-radius:999px;background:var(--chip);position:relative;flex:none;border:1px solid var(--line)}
+.toggle .sw::after{content:"";position:absolute;top:.12em;left:.15em;width:1.15em;height:1.15em;border-radius:50%;background:var(--muted);transition:left .15s}
+.toggle[aria-pressed="true"] .sw{background:var(--ok);border-color:var(--ok)}
+.toggle[aria-pressed="true"] .sw::after{left:1.25em;background:#fff}
+.form{display:flex;flex-direction:column;gap:.7em}
+.form label{font-weight:700}
+.pin{font:inherit;font-size:1.2em;padding:.4em .6em;border-radius:.5em;border:2px solid var(--line);background:var(--card);color:var(--ink);width:100%}
+.alert{border-left:.4em solid var(--no);background:var(--card);padding:.7em .9em;border-radius:.5em;font-size:1.1em}
+.alert.good{border-left-color:var(--ok)}
+.code{font-size:2.4em;font-weight:700;letter-spacing:.12em;font-variant-numeric:tabular-nums}
+.overlay{position:absolute;inset:0;background:rgba(6,14,16,.62);display:flex;align-items:center;justify-content:center;z-index:20;padding:1em}
+.sheet{background:var(--wall);border-radius:1em;padding:1.2em;max-width:36em;width:100%;display:flex;flex-direction:column;gap:.8em;max-height:100%;overflow:auto}
+.listen{display:flex;align-items:center;gap:.8em;font-size:1.3em;font-weight:700}
+.wave{display:flex;gap:.18em;align-items:center;height:1.6em}
+.wave i{width:.28em;background:var(--accent);border-radius:.2em;animation:wv 1s infinite ease-in-out}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}
+@keyframes wv{0%,100%{height:.4em}50%{height:1.5em}}
+.note{color:var(--muted);font-size:.9em}
+.alarm{position:absolute;inset:0;z-index:15;background:var(--wall);display:flex;flex-direction:column;border:.5em solid var(--imp);animation:pulse 1.6s infinite}
+@keyframes pulse{50%{border-color:var(--imp-bg)}}
+.media{position:absolute;inset:0;background:#000;z-index:25;display:flex;flex-direction:column;color:#fff}
+.media .m{flex:1;display:grid;place-items:center;padding:1em}
+.media svg{max-height:100%;max-width:100%;border-radius:.5em}
+.ptoast{position:absolute;left:50%;top:4.2em;transform:translateX(-50%);background:var(--ink);color:var(--page);padding:.6em 1em;border-radius:.6em;font-weight:700;z-index:30;max-width:90%;text-align:center}
+.sleep{position:absolute;inset:0;z-index:40;background:#0B1214;color:#E8F0EE;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6em;border:none;width:100%;font-family:var(--f-panel)}
+.sleep b{font-size:5em;font-variant-numeric:tabular-nums;line-height:1}
+.sleep .ph{width:14em;border-radius:.6em;overflow:hidden;opacity:.8}
+.bar{height:.5em;border-radius:999px;background:var(--chip);overflow:hidden;width:100%}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width 3s linear}
+@media (prefers-reduced-motion:reduce){.wave i,.alarm{animation:none}.bar i{transition:none}}
+
+/* ---------- APP (celular) ---------- */
+.phone{background:var(--frame);border-radius:42px;padding:12px;box-shadow:var(--shadow);width:100%;max-width:380px}
+.ascreen{position:relative;height:min(720px,max(560px,calc(100dvh - 215px)));border-radius:32px;overflow:hidden;background:var(--surface);display:flex;flex-direction:column;font-size:14px}
+.astatus{display:flex;justify-content:space-between;padding:10px 22px 4px;font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
+.ahead{display:flex;align-items:center;gap:10px;padding:8px 16px 12px;border-bottom:1px solid var(--line)}
+.ahead h3{margin:0;font-size:17px;font-weight:700;line-height:1.2}
+.ahead p{margin:0;font-size:12px;color:var(--muted)}
+.aback{border:none;background:var(--chip);width:34px;height:34px;border-radius:50%;display:grid;place-items:center;flex:none}
+.abody{flex:1;overflow:auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:12px}
+.acard{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--card);display:flex;flex-direction:column;gap:6px;text-align:left;width:100%}
+button.acard:hover{border-color:var(--accent)}
+.acard .k{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.acard .v{font-weight:600}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 12px;text-align:left;display:flex;flex-direction:column;gap:6px;font-weight:600;position:relative}
+.tile svg{width:22px;height:22px;color:var(--accent)}
+.tile .n{position:absolute;top:10px;right:10px;background:var(--no);color:#fff;font-size:11px;border-radius:999px;padding:1px 7px}
+.abtn{border:none;border-radius:12px;padding:12px 14px;font-weight:600;background:var(--accent);color:var(--accent-ink);width:100%}
+.abtn.sec{background:var(--chip);color:var(--ink)}
+.abtn.warn{background:var(--no);color:#fff}
+.abtn[disabled]{opacity:.5;cursor:not-allowed}
+.arow{display:flex;gap:8px}
+.arow>*{flex:1}
+.afield{display:flex;flex-direction:column;gap:4px}
+.afield label{font-size:12px;font-weight:600;color:var(--muted)}
+.ain{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
+textarea.ain{min-height:76px;resize:vertical}
+.aerr{color:var(--no);font-size:12px;font-weight:600}
+.atoggle{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);text-align:left;width:100%}
+.atoggle .sw{width:40px;height:24px;border-radius:999px;background:var(--chip);position:relative;flex:none;border:1px solid var(--line)}
+.atoggle .sw::after{content:"";position:absolute;top:2px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--muted);transition:left .15s}
+.atoggle[aria-pressed="true"] .sw{background:var(--ok);border-color:var(--ok)}
+.atoggle[aria-pressed="true"] .sw::after{left:18px;background:#fff}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chipb{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-size:13px}
+.chipb[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.st{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);width:fit-content}
+.st.free{background:var(--imp-bg);color:var(--imp)}
+.st.ok{background:var(--accent-soft);color:var(--accent)}
+.st.no{background:var(--chip);color:var(--no)}
+.anotif{position:absolute;left:10px;right:10px;top:34px;z-index:30;background:var(--ink);color:var(--page);border-radius:16px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start;text-align:left;border:none;box-shadow:var(--shadow)}
+.anotif small{display:block;opacity:.7;font-size:11px}
+.atoast{position:absolute;left:16px;right:16px;bottom:18px;z-index:30;background:var(--ink);color:var(--page);border-radius:12px;padding:10px 12px;font-weight:600;font-size:13px}
+.preview{border:2px dashed var(--line);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px;font-family:var(--f-panel)}
+.preview .pt{font-size:18px;font-weight:700}
+.minithumb{width:74px;aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:2px solid transparent;padding:0;background:none}
+.minithumb[aria-pressed="true"]{border-color:var(--accent)}
+.minithumb svg{display:block;width:100%;height:100%}
+.rec{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--no);animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.25}}
+.empty{color:var(--muted);text-align:center;padding:12px}
+
+/* ---------- Controles do avaliador ---------- */
+.sim{max-width:1240px;margin:28px auto 0;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:16px}
+.sim h2{margin:0 0 4px;font-size:15px}
+.sim > p{margin:0 0 12px;color:var(--muted);font-size:13px;max-width:70ch}
+.simgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px}
+.simgrid h3{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.simgrid .col{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.simb{border:1px solid var(--line);background:var(--page);border-radius:8px;padding:6px 10px;font-size:13px;text-align:left}
+.simt{display:flex;align-items:center;gap:8px;font-size:13px;background:none;border:none;padding:2px 0;text-align:left}
+.simt .box{width:16px;height:16px;border-radius:4px;border:2px solid var(--muted);flex:none}
+.simt[aria-pressed="true"] .box{background:var(--accent);border-color:var(--accent)}
+</style>
+
+<header class="top">
+  <div class="brand">
+    <h1>Mural da Casa</h1>
+    <p>Protótipo interativo · IHC 2026/2 · Grupo 6 (MAAE)</p>
+  </div>
+  <div class="views" role="group" aria-label="O que mostrar">
+    <button type="button" id="v-both" data-view="both" aria-pressed="true">Painel e app</button>
+    <button type="button" id="v-panel" data-view="panel" aria-pressed="false">Só o painel da casa</button>
+    <button type="button" id="v-app" data-view="app" aria-pressed="false">Só o app da família</button>
+    <button type="button" id="v-reset" class="ghost" data-reset="1">Recomeçar</button>
+  </div>
+</header>
+<p class="hint">À esquerda, o painel fixo na cozinha da Dona Glória (tablet, uso por toque ou voz). À direita, o aplicativo da filha, Olga. Os dois estão ligados: o que um envia aparece no outro. A voz é simulada: ao tocar no microfone, escolha o que a pessoa diria.</p>
+
+<main class="stage" id="stage">
+  <section class="devwrap panel" aria-label="Painel da casa">
+    <p class="devlabel">Painel da casa · Dona Glória</p>
+    <div class="tablet"><div class="pscreen" id="pscreen"></div></div>
+  </section>
+  <section class="devwrap app" aria-label="Aplicativo da família">
+    <p class="devlabel" id="applabel">Aplicativo · Olga (filha)</p>
+    <div class="phone"><div class="ascreen" id="ascreen"></div></div>
+  </section>
+</main>
+
+<section class="sim" aria-label="Controles do avaliador">
+  <h2>Controles do avaliador</h2>
+  <p>Estes botões não fazem parte do sistema. Eles simulam o que, no uso real, viria do relógio, da rede ou de outras pessoas.</p>
+  <div class="simgrid" id="simgrid"></div>
+</section>
+
+<script>
+(function(){
+"use strict";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DIAS = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+const HOJE = "2026-11-17";
+function fmtData(iso){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d); const dia=DIAS[dt.getDay()];
+  if(iso===HOJE) return "Hoje"; if(iso==="2026-11-18") return "Amanhã";
+  return dia.charAt(0).toUpperCase()+dia.slice(1)+", "+String(d).padStart(2,"0")+"/"+String(m).padStart(2,"0"); }
+function addDays(iso,n){ const [y,m,d]=iso.split("-").map(Number); const dt=new Date(y,m-1,d+n);
+  return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); }
+function addMin(h,n){ let [a,b]=h.split(":").map(Number); let t=a*60+b+n; t=((t%1440)+1440)%1440; return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0"); }
+
+/* ---------- Ilustrações das fotos (desenhos simples) ---------- */
+const FOTOS = {
+  prova: {nome:"Prova da Júlia", svg:`<svg viewBox="0 0 160 120" role="img" aria-label="Foto: prova com nota 9,5"><rect width="160" height="120" fill="#CFE3F2"/><rect x="38" y="10" width="84" height="104" rx="3" fill="#fff" transform="rotate(-4 80 62)"/><g transform="rotate(-4 80 62)" stroke="#9AA9B4" stroke-width="3"><line x1="50" y1="40" x2="104" y2="40"/><line x1="50" y1="52" x2="110" y2="52"/><line x1="50" y1="64" x2="98" y2="64"/><line x1="50" y1="76" x2="108" y2="76"/><line x1="50" y1="88" x2="92" y2="88"/></g><circle cx="104" cy="28" r="15" fill="none" stroke="#C0392B" stroke-width="3"/><text x="104" y="33" font-family="Verdana" font-size="13" font-weight="700" fill="#C0392B" text-anchor="middle">9,5</text></svg>`},
+  almoco: {nome:"Almoço de sábado", svg:`<svg viewBox="0 0 160 120" role="img" aria-label="Foto: almoço com duas pessoas"><rect width="160" height="120" fill="#F2D9B8"/><rect y="78" width="160" height="42" fill="#B9825A"/><circle cx="52" cy="46" r="13" fill="#7A5236"/><rect x="38" y="58" width="28" height="22" rx="8" fill="#3C7A8C"/><circle cx="108" cy="44" r="13" fill="#D9D0C7"/><rect x="94" y="56" width="28" height="24" rx="8" fill="#9C4F6B"/><ellipse cx="80" cy="92" rx="16" ry="6" fill="#fff"/><ellipse cx="80" cy="91" rx="9" ry="3" fill="#E39B3A"/><ellipse cx="44" cy="96" rx="12" ry="4.5" fill="#fff"/><ellipse cx="116" cy="96" rx="12" ry="4.5" fill="#fff"/></svg>`},
+  jardim: {nome:"Orquídea florida", svg:`<svg viewBox="0 0 160 120" role="img" aria-label="Foto: orquídea em um vaso"><rect width="160" height="120" fill="#DCEBD5"/><path d="M80 96 C78 70 86 50 98 34" stroke="#4E7A3A" stroke-width="3" fill="none"/><g fill="#C76BA8"><circle cx="98" cy="32" r="8"/><circle cx="90" cy="46" r="7"/><circle cx="104" cy="50" r="6"/></g><g fill="#F7E5F1"><circle cx="98" cy="32" r="3"/><circle cx="90" cy="46" r="2.5"/></g><path d="M60 96 h40 l-6 20 h-28z" fill="#8C5A3C"/><path d="M70 96 C58 90 56 82 60 78 C68 82 72 88 74 96z M86 96 C96 88 104 86 108 88 C102 94 96 96 88 97z" fill="#5E8F45"/></svg>`},
+  pia: {nome:"Pia da cozinha", svg:`<svg viewBox="0 0 160 120" role="img" aria-label="Foto: torneira pingando"><rect width="160" height="120" fill="#E3E8EA"/><rect x="20" y="70" width="120" height="40" rx="4" fill="#B8C3C8"/><rect x="30" y="74" width="100" height="22" rx="10" fill="#8E9CA3"/><path d="M80 26 v18 h24 v10" stroke="#6E7C83" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M104 60 c-3 5-4 8 0 10 c4-2 3-5 0-10z" fill="#3D8FD1"/></svg>`}
+};
+
+/* ---------- Estado compartilhado ---------- */
+function inicial(){
+  return {
+    hora:"07:42", view:"both", appUser:"Olga",
+    codigo:null, codigoPendente:false,
+    prefs:{escala:1, volume:3, npIni:"22:00", npFim:"07:00", palavra:true, prazo:30},
+    familia:[
+      {id:"olga", nome:"Olga", rel:"filha", tel:"(11) 98123-4410", perms:{recados:true, lembretes:true, respostas:true}},
+      {id:"levi", nome:"Levi", rel:"neto", tel:"(31) 99702-1188", perms:{recados:true, lembretes:false, respostas:false}},
+      {id:"julia", nome:"Júlia", rel:"neta", tel:"(31) 99815-2203", perms:{recados:true, lembretes:false, respostas:false}}
+    ],
+    recados:[
+      {id:"m1", de:"Júlia", rel:"neta", hora:"Ontem, 21:10", texto:"Vó, passei na prova!", audio:{dur:"0:04"}, foto:"prova", resp:null},
+      {id:"m2", de:"Olga", rel:"filha", hora:"Ontem, 19:02", texto:"Mãe, no sábado eu ligo às 10h. Beijo!", resp:null}
+    ],
+    proprios:[{id:"r0", texto:"A pia da cozinha está pingando. Quem puder dar uma olhada, agradeço.", hora:"Ontem, 18:20", assumido:null, novo:false}],
+    lembretes:[
+      {id:"L1", titulo:"Remédio da tarde", data:HOJE, hora:"13:00", imp:false, de:null, resp:null},
+      {id:"L2", titulo:"Consulta no oftalmologista", desc:"Clínica da Av. Brasil. Levar os óculos e o cartão do plano.", data:HOJE, hora:"15:00", imp:true, de:"Olga", resp:null},
+      {id:"L3", titulo:"Pagar o condomínio", data:"2026-11-20", hora:"10:00", imp:false, de:"Olga", resp:null}
+    ],
+    propostas:[
+      {id:"p1", de:"Olga", titulo:"Exame de sangue", desc:"Em jejum de 8 horas. Laboratório da Rua Pouso Alegre.", data:"2026-11-19", hora:"07:30", rep:"Não repete", sugImp:true, estado:"aguardando", impFinal:false, quando:"Hoje, 07:10"}
+    ],
+    historico:[
+      {id:"h2", titulo:"Consulta no oftalmologista", data:HOJE, hora:"15:00", estado:"aceita", imp:true, conf:null, lid:"L2"},
+      {id:"h3", titulo:"Pagar o condomínio", data:"2026-11-20", hora:"10:00", estado:"aceita", imp:false},
+      {id:"h1", titulo:"Caminhada no Parque Municipal", data:"2026-11-14", hora:"08:00", estado:"recusada", imp:false}
+    ],
+    sim:{voz:false, offline:false, outro:false},
+    panel:{scene:"P1", voice:null, media:null, toast:null, alarm:null, sleep:false, sub:{}},
+    app:{scene:"A1", sub:{}, notif:null, toast:null, avisos:{pedidos:true, respostas:true, importantes:true}, painel:"Casa da Dona Glória · Santa Tereza"}
+  };
+}
+let S = inicial();
+
+/* ---------- Voz (leitura em voz alta real, quando o navegador permite) ---------- */
+function falar(txt){ try{ if(!("speechSynthesis" in window)) return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(txt); u.lang="pt-BR"; u.rate=.95; speechSynthesis.speak(u);}catch(e){} }
+
+/* ---------- Ícones ---------- */
+const IC = {
+  mic:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>`,
+  msg:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>`,
+  cal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>`,
+  hand:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 11V6a2 2 0 0 1 4 0v5M11 10V4a2 2 0 0 1 4 0v6M15 10V6a2 2 0 0 1 4 0v8a7 7 0 0 1-12 5l-3-4a2 2 0 0 1 3-2l1 1"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12l5 5L20 6"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>`
+};
+
+/* ======================================================================
+   PAINEL DA CASA
+   ====================================================================== */
+function P(){ return S.panel; }
+function pGo(scene, sub){ const p=P(); p.scene=scene; p.sub=sub||{}; p.voice=null; renderPanel(); }
+function pToast(t){ P().toast=t; renderPanel(); clearTimeout(pToast._t); pToast._t=setTimeout(()=>{P().toast=null; renderPanel();},2600); }
+function lembretesHoje(){ return S.lembretes.filter(l=>l.data===HOJE).sort((a,b)=>a.hora.localeCompare(b.hora)); }
+function lembretesProx(){ return S.lembretes.filter(l=>l.data>HOJE).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)); }
+function propPend(){ return S.propostas.filter(p=>p.estado==="aguardando"); }
+
+function pbar(title){
+  const p=P();
+  const back = p.scene==="P1" ? `<span class="ptitle">${+S.hora.slice(0,2)<12?"Bom dia":+S.hora.slice(0,2)<18?"Boa tarde":"Boa noite"}, Dona Glória</span>` :
+    `<button class="pback" data-p="home" type="button">${IC.back} Voltar ao início</button><span class="ptitle">${esc(title)}</span>`;
+  const tools = p.scene==="P1" ? `<div class="ptools"><button class="pbtn" type="button" data-p="go" data-s="P5">Pessoas do mural</button><button class="pbtn" type="button" data-p="go" data-s="P6">Ajustes</button></div>` : "";
+  return `<div class="pbar">${back}${tools}<div class="pclock"><b>${S.hora}</b>terça, 17 de novembro</div></div>`;
+}
+function respLabel(l){
+  if(!l.resp) return "";
+  const map={feito:"Feito",indo:"Você respondeu: já estou indo",adiado:"Adiado para "+(l.adiadoPara||""),naovou:"Você respondeu: não vou",sem:"Encerrado sem resposta"};
+  return `<span class="badge gray">${esc(map[l.resp]||l.resp)}</span>`;
+}
+
+function sceneP1(){
+  const hoje = lembretesHoje().map(l=>`
+    <div class="pitem"><div class="row"><span class="t">${esc(l.titulo)}</span><span class="h">${l.hora}</span></div>
+    ${l.imp?`<span class="badge">Importante · a família sabe se você confirmou</span>`:""}
+    ${l.de?`<span class="s">Sugerido por ${esc(l.de)}</span>`:""}${respLabel(l)}</div>`).join("");
+  const prox = lembretesProx().slice(0,3).map(l=>`<div class="pitem"><div class="row"><span class="t">${esc(l.titulo)}</span><span class="h">${fmtData(l.data)}, ${l.hora}</span></div>${l.imp?`<span class="badge">Importante</span>`:""}</div>`).join("");
+  const rec = S.recados.map(r=>{
+    const sub = P().sub.respId===r.id;
+    return `<div class="pitem"><div class="row"><span><span class="from">${esc(r.de)}</span> <span class="s">· ${esc(r.rel)}</span></span><span class="s">${esc(r.hora)}</span></div>
+    <span class="t" style="font-weight:400">${esc(r.texto)}</span>
+    <div class="pacts">
+      ${r.audio?`<button class="pbtn" type="button" data-p="audio" data-id="${r.id}">▶ Ouvir áudio (${r.audio.dur})</button>`:`<button class="pbtn" type="button" data-p="ler" data-id="${r.id}">Ler em voz alta</button>`}
+      ${r.foto?`<button class="pbtn" type="button" data-p="foto" data-id="${r.id}">Ver foto</button>`:""}
+      ${r.resp?`<span class="badge ok">Você respondeu: “${esc(r.resp)}”</span>`:`<button class="pbtn" type="button" data-p="responder" data-id="${r.id}">Responder</button>`}
+    </div>
+    ${sub && !r.resp ? `<div class="pacts" role="group" aria-label="Respostas prontas">${["Combinado","Obrigada!","Depois eu ligo"].map(t=>`<button class="pbtn acc" type="button" data-p="pronto" data-id="${r.id}" data-t="${t}">${t}</button>`).join("")}<button class="pbtn" type="button" data-p="responder" data-id="">Agora não</button></div>`:""}
+    ${P().sub.envResp===r.id?`<div class="alert">Não foi possível enviar a resposta. Sem conexão com a internet. <div class="pacts" style="margin-top:.4em"><button class="pbtn" type="button" data-p="pronto" data-id="${r.id}" data-t="${esc(P().sub.envTexto)}">Tentar de novo</button></div></div>`:""}
+    </div>`;}).join("");
+  const meus = S.proprios.map(m=>`<div class="pitem"><span class="t" style="font-weight:400">${esc(m.texto)}</span>
+    ${m.assumido?`<span class="badge ok">${esc(m.assumido.quem)} vai resolver${m.assumido.quando?" · "+esc(m.assumido.quando):""}</span>`:`<span class="badge gray">Ninguém assumiu ainda</span>`}</div>`).join("");
+  const fotos = ["prova","jardim"].concat(S.recados.some(r=>r.foto==="almoco")?["almoco"]:[]).map(f=>`<button class="thumb" type="button" data-p="fotoK" data-k="${f}" aria-label="Abrir foto: ${FOTOS[f].nome}">${FOTOS[f].svg}</button>`).join("");
+  return `<div class="pgrid">
+    <div class="psec" style="display:flex;flex-direction:column;gap:1em">
+      <div><h2>Hoje</h2><div class="plist">${hoje||`<p class="s">Nada marcado para hoje.</p>`}</div></div>
+      ${prox?`<div><h2>Próximos dias</h2><div class="plist">${prox}</div></div>`:""}
+      <div><h2>Seus recados para a família</h2><div class="plist">${meus||`<p class="s">Você não deixou recados.</p>`}</div></div>
+    </div>
+    <div class="psec" style="display:flex;flex-direction:column;gap:1em">
+      <div><h2>Recados da família</h2><div class="plist">${rec||`<p class="s">Nenhum recado novo.</p>`}</div></div>
+      <div><h2>Fotos da semana</h2><div class="thumbs">${fotos}</div></div>
+    </div></div>`;
+}
+function dockP1(){
+  return `<div class="pdock">
+    <button class="pbtn big acc" type="button" data-p="go" data-s="P2">Deixar recado</button>
+    <button class="pbtn big" type="button" data-p="lertudo">Ouvir o que tem hoje</button>
+  </div>`;
+}
+
+const PRONTOS = ["Estou bem, não precisam se preocupar.","Pode me ligar quando puder?","Preciso de ajuda em casa.","Obrigada pela visita!"];
+function sceneP2(){
+  const s=P().sub; const m=s.mode||"escolha";
+  if(m==="escolha") return `<div class="form">
+      <p class="huge" style="font-size:1.5em">Como quer deixar o recado?</p>
+      <div class="pacts"><button class="pbtn big acc" type="button" data-p="ditar">${IC.mic.replace('<svg','<svg width="1.1em" height="1.1em" style="vertical-align:-.15em"')} Falar o recado</button></div>
+      <p class="note">Ou toque em um recado pronto:</p>
+      <div class="choices">${PRONTOS.map((t,i)=>`<button class="choice" type="button" data-p="p2pronto" data-i="${i}">${esc(t)}</button>`).join("")}</div>
+      <div class="pacts"><button class="pbtn stop" type="button" data-p="cancelar">Cancelar</button></div></div>`;
+  if(m==="conferir") return `<div class="form">
+      <p class="note" style="font-size:1.05em">Confira o recado antes de enviar. Se estiver errado, fale de novo ou corrija.</p>
+      <div class="transcr" aria-live="polite">${esc(s.texto)}</div>
+      <div class="pacts"><button class="pbtn" type="button" data-p="lerTexto">Ouvir o texto</button>
+        ${s.falado?`<button class="pbtn" type="button" data-p="ditar">Falar de novo</button>`:""}
+        <button class="pbtn" type="button" data-p="corrigir">Corrigir o texto</button></div>
+      <div class="pacts" style="margin-top:.4em"><button class="pbtn big go" type="button" data-p="enviarRecado">Enviar para a família</button>
+        <button class="pbtn big stop" type="button" data-p="cancelar">Cancelar</button></div></div>`;
+  if(m==="corrigir") return `<div class="form">
+      <label for="p2txt">Corrija o texto do recado</label>
+      <textarea id="p2txt" class="pin" rows="3">${esc(s.texto)}</textarea>
+      <div class="pacts"><button class="pbtn big acc" type="button" data-p="salvarCorrecao">Pronto</button><button class="pbtn" type="button" data-p="voltarConferir">Desfazer</button></div></div>`;
+  if(m==="enviando") return `<div class="center"><p class="huge">Enviando o recado…</p></div>`;
+  if(m==="erro") return `<div class="center"><p class="huge">O recado não foi enviado.</p><p style="font-size:1.2em">Sem conexão com a internet. O texto continua guardado aqui.</p>
+      <div class="pacts"><button class="pbtn big acc" type="button" data-p="enviarRecado">Tentar de novo</button><button class="pbtn big" type="button" data-p="home">Voltar ao início</button></div></div>`;
+  if(m==="ok") return `<div class="center"><p class="huge">Recado no mural.</p><p style="font-size:1.2em">A família foi avisada. Quem puder ajudar marca no aplicativo, e você vê aqui no painel.</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
+  return "";
+}
+
+function alarmView(){
+  const a=P().alarm; if(!a) return "";
+  const l=S.lembretes.find(x=>x.id===a.id); if(!l) return "";
+  if(a.fase==="ok") return `<div class="alarm" style="animation:none;border-color:var(--ok)"><div class="pbody center"><p class="huge">Resposta registrada.</p><p style="font-size:1.3em">${esc(a.msg)}</p><button class="pbtn big acc" type="button" data-p="fecharAlarme">Voltar ao mural</button></div></div>`;
+  if(a.fase==="sem") return `<div class="alarm" style="animation:none"><div class="pbody center"><p class="huge">O lembrete “${esc(l.titulo)}” foi encerrado.</p><p style="font-size:1.2em">Ele ficou sem resposta até o fim do prazo. ${l.imp?"A família recebeu apenas o aviso de que não houve confirmação.":""}</p><button class="pbtn big acc" type="button" data-p="fecharAlarme">Voltar ao mural</button></div></div>`;
+  if(a.fase==="adiar") return `<div class="alarm"><div class="pbody center"><p class="huge">Adiar por quanto tempo?</p><div class="pacts">
+      <button class="pbtn big" type="button" data-p="adiar" data-m="15">15 minutos</button><button class="pbtn big" type="button" data-p="adiar" data-m="30">30 minutos</button><button class="pbtn big" type="button" data-p="adiar" data-m="60">1 hora</button></div>
+      <button class="pbtn" type="button" data-p="alarmeVoltar">Voltar</button></div></div>`;
+  const fora = /consulta|exame|dentista|médic/i.test(l.titulo);
+  return `<div class="alarm" role="alertdialog" aria-label="Lembrete">
+    <div class="pbar"><span class="ptitle">Lembrete</span><div class="pclock"><b>${S.hora}</b>terça, 17 de novembro</div></div>
+    <div class="pbody center" style="padding-bottom:6em">
+      <p style="font-size:1.2em;margin:0">${fora?"Daqui a pouco você tem:":"Está na hora:"}</p>
+      <p class="huge" style="font-size:2.6em;margin:0">${esc(l.titulo)}</p>
+      <p style="font-size:1.6em;margin:0;font-weight:700">${fmtData(l.data)}, às ${l.hora}</p>
+      ${l.desc?`<p style="font-size:1.15em;margin:0">${esc(l.desc)}</p>`:""}
+      ${l.imp?`<span class="badge" style="font-size:1em">Importante: ${esc(l.de||"a família")} vai saber se você confirmou</span>`:""}
+      <div class="pacts" style="justify-content:center;margin-top:.6em">
+        <button class="pbtn big go" type="button" data-p="resp" data-r="${fora?"indo":"feito"}">${fora?"Já estou indo":"Feito"}</button>
+        <button class="pbtn big" type="button" data-p="resp" data-r="adiar">Adiar</button>
+        <button class="pbtn big stop" type="button" data-p="resp" data-r="naovou">Não vou</button>
+      </div>
+      <button class="pbtn" type="button" data-p="lerLembrete">Ler em voz alta</button>
+      ${a.erro?`<div class="alert">${esc(a.erro)}</div>`:""}
+    </div></div>`;
+}
+
+function sceneP4(){
+  const s=P().sub; const p=S.propostas.find(x=>x.id===s.id) || propPend()[0];
+  if(!p) return `<div class="center"><p class="huge">Nenhuma proposta esperando resposta.</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
+  if(!s.id){ s.id=p.id; }
+  if(s.fase==="enviando") return `<div class="center"><p class="huge">Registrando sua decisão…</p></div>`;
+  if(s.fase==="ok") return `<div class="center"><p class="huge">Decisão registrada.</p><p style="font-size:1.2em">${esc(s.msg)}</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
+  if(s.data==null){ s.data=p.data; s.hora=p.hora; s.imp=false; }
+  const alter = s.fase==="alterar";
+  return `<div class="form">
+    <p style="font-size:1.15em;margin:0"><b>${esc(p.de)}</b> sugeriu um lembrete. Você decide se ele entra no seu mural.</p>
+    <div class="pitem" style="border-width:2px">
+      <span class="t" style="font-size:1.6em">${esc(p.titulo)}</span>
+      <span class="h" style="font-size:1.35em">${fmtData(alter?s.data:p.data)}, às ${alter?s.hora:p.hora}</span>
+      ${p.desc?`<span style="font-size:1.1em">${esc(p.desc)}</span>`:""}
+      <span class="s">Repete: ${esc(p.rep)}</span>
+    </div>
+    ${alter?`<div class="form" aria-label="Escolher nova data e horário">
+        <div class="stepper"><span style="min-width:5em;font-weight:700">Dia</span><button class="sq" type="button" data-p="stepD" data-n="-1" aria-label="Dia anterior">−</button><span class="val">${fmtData(s.data)}</span><button class="sq" type="button" data-p="stepD" data-n="1" aria-label="Próximo dia">+</button></div>
+        <div class="stepper"><span style="min-width:5em;font-weight:700">Horário</span><button class="sq" type="button" data-p="stepH" data-n="-30" aria-label="Meia hora antes">−</button><span class="val">${s.hora}</span><button class="sq" type="button" data-p="stepH" data-n="30" aria-label="Meia hora depois">+</button></div>
+        ${s.erro?`<div class="alert">${esc(s.erro)}</div>`:""}
+      </div>`:""}
+    ${p.sugImp?`<button class="toggle" type="button" data-p="impTog" aria-pressed="${s.imp?"true":"false"}"><span class="sw"></span><span>Marcar como importante<br><span class="note" style="font-weight:400">${esc(p.de)} sugeriu. Se ligar, ${esc(p.de)} fica sabendo se você confirmou ou não. Você pode desligar depois.</span></span></button>`:""}
+    <div class="pacts">
+      ${alter?`<button class="pbtn big go" type="button" data-p="decidir" data-d="alterada">Aceitar com o novo horário</button><button class="pbtn big" type="button" data-p="p4cancelAlt">Voltar</button>`:
+      `<button class="pbtn big go" type="button" data-p="decidir" data-d="aceita">Aceitar</button>
+       <button class="pbtn big" type="button" data-p="p4alterar">Mudar dia ou horário</button>
+       <button class="pbtn big" type="button" data-p="decidir" data-d="adiada">Decidir depois</button>
+       <button class="pbtn big stop" type="button" data-p="decidir" data-d="recusada">Recusar</button>`}
+    </div>
+    ${!alter?`<p class="note">Ninguém pede justificativa: ao recusar, ${esc(p.de)} só vê “recusada”.</p>`:""}
+  </div>`;
+}
+
+function sceneP5(){
+  const s=P().sub;
+  if(s.fase==="enviando") return `<div class="center"><p class="huge">Salvando…</p></div>`;
+  if(s.fase==="ok") return `<div class="center"><p class="huge">Permissões salvas.</p><p style="font-size:1.2em">O aplicativo de cada familiar já mostra o que ele pode fazer.</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
+  if(!s.lista) s.lista = JSON.parse(JSON.stringify(S.familia));
+  if(s.add) return `<div class="form">
+      <p style="font-size:1.2em;margin:0;font-weight:700">Adicionar uma pessoa ao mural</p>
+      <label for="p5nome">Nome</label><input id="p5nome" class="pin" value="${esc(s.add.nome)}" autocomplete="off">
+      <label for="p5tel">Telefone com DDD</label><input id="p5tel" class="pin" inputmode="tel" value="${esc(s.add.tel)}" autocomplete="off">
+      <p class="note">O que essa pessoa pode fazer:</p>
+      ${permToggles(s.add.perms,"add")}
+      ${s.erro?`<div class="alert">${esc(s.erro)}</div>`:""}
+      <div class="pacts"><button class="pbtn big acc" type="button" data-p="p5addOk">Adicionar</button><button class="pbtn big" type="button" data-p="p5addCancel">Cancelar</button></div></div>`;
+  const rows = s.lista.map((f,i)=>`<div class="pitem">
+      <div class="row"><span class="t">${esc(f.nome)} <span class="s" style="font-weight:400">· ${esc(f.rel||"família")}</span></span><span class="s">${esc(f.tel)}</span></div>
+      ${s.remover===i?`<div class="alert">Tirar ${esc(f.nome)} do mural? Ele deixa de ver e de enviar recados.<div class="pacts" style="margin-top:.4em"><button class="pbtn stop" type="button" data-p="p5remOk" data-i="${i}">Sim, tirar</button><button class="pbtn" type="button" data-p="p5remNo">Não</button></div></div>`:
+      `${permToggles(f.perms,i)}<div class="pacts"><button class="pbtn" type="button" data-p="p5rem" data-i="${i}">Tirar do mural</button></div>`}
+    </div>`).join("");
+  return `<div class="form">
+    <p style="font-size:1.15em;margin:0">Você decide quem participa do seu mural e o que cada um pode fazer.</p>
+    <div class="plist">${rows}</div>
+    ${s.erro?`<div class="alert">${esc(s.erro)}</div>`:""}
+    <div class="pacts"><button class="pbtn" type="button" data-p="p5add">Adicionar pessoa</button></div>
+    <div class="pacts"><button class="pbtn big go" type="button" data-p="p5salvar">Salvar</button></div></div>`;
+}
+function permToggles(perms,key){
+  const L={recados:"Deixar recados",lembretes:"Sugerir lembretes",respostas:"Ver minhas respostas"};
+  return `<div class="pacts">${Object.keys(L).map(k=>`<button class="toggle" type="button" data-p="perm" data-k="${k}" data-i="${key}" aria-pressed="${perms[k]?"true":"false"}"><span class="sw"></span>${L[k]}</button>`).join("")}</div>`;
+}
+
+function sceneP6(){
+  const s=P().sub; const pr=S.prefs;
+  if(s.fase==="ok") return `<div class="center"><p class="huge">Ajustes aplicados.</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
+  if(s.fase==="semvinculo") return `<div class="center"><p class="huge">O código ainda não foi confirmado no aplicativo.</p><p style="font-size:1.2em">Os outros ajustes foram aplicados. Para ligar o aplicativo, gere um código novo e peça ao familiar para digitar.</p>
+     <div class="pacts"><button class="pbtn big acc" type="button" data-p="novoCodigo">Gerar novo código</button><button class="pbtn big" type="button" data-p="semVinculoOk">Agora não</button></div></div>`;
+  const lv=["Normal","Grande","Muito grande"]; const esc_i=[1,1.15,1.3].indexOf(pr.escala);
+  return `<div class="form">
+    <div class="pitem"><span class="t">Tamanho das letras</span><div class="pacts">${lv.map((n,i)=>`<button class="toggle" type="button" data-p="escala" data-i="${i}" aria-pressed="${i===esc_i?"true":"false"}">${n}</button>`).join("")}</div></div>
+    <div class="pitem"><span class="t">Volume dos avisos</span><div class="stepper"><button class="sq" type="button" data-p="vol" data-n="-1" aria-label="Mais baixo">−</button><span class="val">${"●".repeat(pr.volume)}${"○".repeat(5-pr.volume)}</span><button class="sq" type="button" data-p="vol" data-n="1" aria-label="Mais alto">+</button><button class="pbtn" type="button" data-p="testeSom">Testar</button></div></div>
+    <div class="pitem"><span class="t">Não incomodar</span><span class="s">O painel fica em silêncio nesse horário. Os lembretes continuam na tela.</span>
+      <div class="stepper"><span style="min-width:3em">das</span><button class="sq" type="button" data-p="np" data-w="npIni" data-n="-30" aria-label="Começar mais cedo">−</button><span class="val">${pr.npIni}</span><button class="sq" type="button" data-p="np" data-w="npIni" data-n="30" aria-label="Começar mais tarde">+</button></div>
+      <div class="stepper"><span style="min-width:3em">às</span><button class="sq" type="button" data-p="np" data-w="npFim" data-n="-30" aria-label="Terminar mais cedo">−</button><span class="val">${pr.npFim}</span><button class="sq" type="button" data-p="np" data-w="npFim" data-n="30" aria-label="Terminar mais tarde">+</button></div></div>
+    <div class="pitem"><span class="t">Lembretes importantes</span><span class="s">Se você não responder, a família é avisada depois de:</span>
+      <div class="stepper"><button class="sq" type="button" data-p="prazo" data-n="-15" aria-label="Menos tempo">−</button><span class="val">${pr.prazo} min</span><button class="sq" type="button" data-p="prazo" data-n="15" aria-label="Mais tempo">+</button></div></div>
+    <div class="pitem"><span class="t">Ativar a voz dizendo “Mural”</span><span class="s">Desligado, o microfone só liga quando você toca no botão.</span>
+      <button class="toggle" type="button" data-p="palavra" aria-pressed="${pr.palavra?"true":"false"}"><span class="sw"></span>${pr.palavra?"Ligado":"Desligado"}</button></div>
+    <div class="pitem"><span class="t">Ligar o aplicativo de um familiar</span>
+      ${S.codigo?`<span class="s">Peça para a pessoa digitar este código no aplicativo. Vale por 10 minutos.</span><span class="code">${S.codigo}</span><div class="pacts"><button class="pbtn" type="button" data-p="novoCodigo">Gerar outro código</button></div>`:
+      `<div class="pacts"><button class="pbtn" type="button" data-p="novoCodigo">Mostrar código</button></div>`}</div>
+    <div class="pacts"><button class="pbtn big go" type="button" data-p="p6ok">Concluir</button></div></div>`;
+}
+
+function voiceSheet(){
+  const v=P().voice; if(!v) return "";
+  const head = v.erro ? `<div class="alert">Não entendi. Fale de novo ou use os botões da tela.</div>` :
+    `<div class="listen"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Estou ouvindo…</div>`;
+  return `<div class="overlay" role="dialog" aria-label="Microfone ligado"><div class="sheet">
+    ${head}
+    <p class="note" style="font-size:1em">Simulação: toque no que a pessoa falaria.</p>
+    <div class="choices">${v.opts.map((o,i)=>`<button class="choice" type="button" data-p="fala" data-i="${i}">“${esc(o.dito)}”</button>`).join("")}</div>
+    <div class="pacts"><button class="pbtn" type="button" data-p="fecharVoz">Desligar o microfone</button></div>
+  </div></div>`;
+}
+function abrirVoz(){
+  const p=P(); let opts;
+  if(p.alarm && !p.alarm.fase){ const l=S.lembretes.find(x=>x.id===p.alarm.id); const fora=/consulta|exame|dentista|médic/i.test(l.titulo);
+    opts=[{dito:fora?"Já estou indo":"Feito", act:()=>responderLembrete(fora?"indo":"feito")},{dito:"Adia meia hora", act:()=>responderLembrete("adiar30")},{dito:"Não vou", act:()=>responderLembrete("naovou")}];
+  } else if(p.scene==="P2"){ opts=[{dito:"Acabou o açúcar e o café, quem vier no fim de semana traz.", act:()=>ditado("Acabou o açúcar e o café, quem vier no fim de semana traz.")},{dito:"A lâmpada do banheiro queimou.", act:()=>ditado("A lâmpada do banheiro queimou.")},{dito:"Cancelar", act:()=>pGo("P1")}];
+  } else if(p.scene==="P4"){ opts=[{dito:"Aceito", act:()=>decidir("aceita")},{dito:"Não quero", act:()=>decidir("recusada")},{dito:"Muda para mais tarde", act:()=>{P().sub.fase="alterar"; P().sub.hora=addMin(P().sub.hora||"07:30",60); renderPanel();}}];
+  } else { opts=[{dito:"Lê o que tem para hoje", act:()=>{pGo("P1"); lerTudo();}},{dito:"Deixa um recado", act:()=>{pGo("P2"); setTimeout(()=>{ P().voice={opts:[{dito:"Acabou o açúcar e o café, quem vier no fim de semana traz.",act:()=>ditado("Acabou o açúcar e o café, quem vier no fim de semana traz.")},{dito:"A lâmpada do banheiro queimou.",act:()=>ditado("A lâmpada do banheiro queimou.")}],erro:false}; renderPanel();},50);}},{dito:"Voltar ao início", act:()=>pGo("P1")}];
+  }
+  p.voice={opts, erro:false}; renderPanel();
+}
+function ditado(txt){ P().scene="P2"; P().sub={mode:"conferir", texto:txt, falado:true}; P().voice=null; renderPanel(); }
+
+function lerTudo(){
+  const h=lembretesHoje().map(l=>`${l.titulo}, às ${l.hora.replace(":00"," horas").replace(":"," e ")}`).join(". ");
+  const r=S.recados.map(x=>`Recado de ${x.de}: ${x.texto}`).join(". ");
+  falar(`Hoje você tem: ${h||"nada marcado"}. ${r}`); pToast("Lendo em voz alta…");
+}
+
+function enviarComRede(cb, falha){ if(S.sim.offline){ setTimeout(falha,900); } else setTimeout(cb,900); }
+
+function responderLembrete(r){
+  const p=P(); const a=p.alarm; const l=S.lembretes.find(x=>x.id===a.id); p.voice=null;
+  if(r==="adiar"){ a.fase="adiar"; renderPanel(); return; }
+  if(r==="adiar30") r="a30";
+  if(S.sim.offline){ a.erro="Sem conexão. Sua resposta fica guardada e é enviada quando a internet voltar."; }
+  if(r.startsWith("a")){ const m=+r.slice(1); l.resp="adiado"; l.adiadoPara=addMin(S.hora,m); a.fase="ok"; a.msg=`Vou lembrar de novo às ${l.adiadoPara}.`; }
+  else { l.resp=r; a.fase="ok"; a.msg = l.imp ? `${l.de||"A família"} foi avisada da sua resposta.` : "Pronto."; }
+  const h=S.historico.find(x=>x.lid===l.id);
+  if(l.imp && h){ h.conf = r==="naovou"?"naovou":(r.startsWith("a")?"adiado":"confirmado"); h.confTxt = r==="indo"?"“Já estou indo”":r==="feito"?"“Feito”":r==="naovou"?"“Não vou”":"adiou para "+l.adiadoPara;
+    notificarApp("importantes", `Sua mãe respondeu: ${l.titulo}`, h.conf==="confirmado"?"Confirmou: "+h.confTxt:h.conf==="naovou"?"Respondeu que não vai.":"Adiou o lembrete.", "A5"); }
+  renderPanel();
+}
+function decidir(d){
+  const s=P().sub; const p=S.propostas.find(x=>x.id===s.id); if(!p) return; P().voice=null;
+  if(d==="alterada"){
+    if((s.data+s.hora) < (HOJE+S.hora)){ s.erro="Esse horário já passou. Escolha outro dia ou horário."; renderPanel(); return; }
+  }
+  if(d==="adiada"){ p.estado="aguardando"; p.adiada=true; s.fase="ok"; s.msg="A proposta continua aqui no início. Você decide quando quiser.";
+    renderPanel(); return; }
+  s.fase="enviando"; renderPanel();
+  setTimeout(()=>{
+    p.estado=d; p.impFinal = (d==="aceita"||d==="alterada") && s.imp;
+    if(d==="aceita"||d==="alterada"){ const data=d==="alterada"?s.data:p.data, hora=d==="alterada"?s.hora:p.hora;
+      const id="L"+Date.now(); S.lembretes.push({id, titulo:p.titulo, desc:p.desc, data, hora, imp:p.impFinal, de:p.de, resp:null});
+      S.historico.unshift({id:"h"+Date.now(), titulo:p.titulo, data, hora, estado:d, imp:p.impFinal, conf:null, lid:id, de:p.de, novo:true}); }
+    else S.historico.unshift({id:"h"+Date.now(), titulo:p.titulo, data:p.data, hora:p.hora, estado:d, imp:false, novo:true});
+    s.fase="ok"; s.msg = d==="recusada" ? `${p.de} vai ver só que a proposta foi recusada.` : `${p.de} foi avisada. O lembrete entrou no seu mural${p.impFinal?" como importante":""}.`;
+    const txt = d==="recusada"?"Recusou":d==="alterada"?`Aceitou com outro horário: ${fmtData(s.data)}, ${s.hora}`:"Aceitou";
+    notificarApp("respostas", `Sua mãe respondeu: ${p.titulo}`, txt, "A5");
+    renderPanel();
+  }, 900);
+}
+
+function renderPanel(){
+  const p=P(); const el=document.getElementById("pscreen");
+  el.style.setProperty("--pscale", S.prefs.escala);
+  if(p.sleep){ el.innerHTML = `<button class="sleep" type="button" data-p="acordar" aria-label="Tocar para acordar o painel"><b>${S.hora}</b><span style="font-size:1.3em">terça, 17 de novembro</span><span class="ph">${FOTOS.almoco.svg}</span><span style="opacity:.7">Toque na tela para ver o mural</span></button>`; return; }
+  let title="", body="";
+  if(p.scene==="P1"){ body=sceneP1(); }
+  else if(p.scene==="P2"){ title="Deixar recado"; body=sceneP2(); }
+  else if(p.scene==="P4"){ title="Proposta de lembrete"; body=sceneP4(); }
+  else if(p.scene==="P5"){ title="Pessoas do mural"; body=sceneP5(); }
+  else if(p.scene==="P6"){ title="Ajustes do mural"; body=sceneP6(); }
+  const pend=propPend();
+  const banner = (p.scene!=="P4" && pend.length) ? `<div class="pbanner" role="status"><span><b>${esc(pend[0].de)} sugeriu um lembrete:</b> ${esc(pend[0].titulo)}</span><button class="pbtn acc" type="button" data-p="verProposta" data-id="${pend[0].id}">Ver proposta</button></div>` : "";
+  const media = p.media ? mediaView() : "";
+  el.innerHTML = pbar(title) + banner + `<div class="pbody">${body}</div>` + (p.scene==="P1"?dockP1():"") +
+    `<button class="mic" type="button" data-p="mic" aria-label="Falar com o mural">${IC.mic}<small>${S.prefs.palavra?"ou diga “Mural”":"toque para falar"}</small></button>` +
+    alarmView() + voiceSheet() + media + (p.toast?`<div class="ptoast" role="status">${esc(p.toast)}</div>`:"");
+}
+function mediaView(){
+  const m=P().media;
+  if(m.tipo==="foto") return `<div class="media" role="dialog" aria-label="Foto"><div class="pbar" style="border-color:#333"><button class="pback" type="button" data-p="fecharMedia" style="background:#fff;color:#000">${IC.back} Fechar</button><span class="ptitle" style="color:#fff">${esc(FOTOS[m.k].nome)}</span></div><div class="m">${FOTOS[m.k].svg}</div></div>`;
+  const r=S.recados.find(x=>x.id===m.id);
+  return `<div class="media" role="dialog" aria-label="Áudio"><div class="pbar" style="border-color:#333"><button class="pback" type="button" data-p="fecharMedia" style="background:#fff;color:#000">${IC.back} Fechar</button><span class="ptitle" style="color:#fff">Áudio de ${esc(r.de)}</span></div>
+    <div class="m"><div style="width:min(30em,100%);display:flex;flex-direction:column;gap:1em;align-items:center"><div class="bar"><i id="abar"></i></div><p class="huge" style="color:#fff">“${esc(r.texto)}”</p><p style="opacity:.75">Transcrição do áudio (${r.audio.dur})</p><button class="pbtn big" type="button" data-p="audio" data-id="${r.id}" style="background:#fff;color:#000">▶ Ouvir de novo</button></div></div></div>`;
+}
+
+document.getElementById("pscreen").addEventListener("click", e=>{
+  const b=e.target.closest("[data-p]"); if(!b) return; const a=b.dataset.p; const p=P(); const s=p.sub;
+  switch(a){
+    case "home": pGo("P1"); break;
+    case "go": pGo(b.dataset.s); break;
+    case "acordar": p.sleep=false; renderPanel(); break;
+    case "mic": abrirVoz(); break;
+    case "fecharVoz": p.voice=null; renderPanel(); break;
+    case "fala": { const o=p.voice.opts[+b.dataset.i]; if(S.sim.voz){ S.sim.voz=false; p.voice.erro=true; renderSim(); renderPanel(); } else { p.voice=null; o.act(); } break; }
+    case "lertudo": lerTudo(); break;
+    case "ler": { const r=S.recados.find(x=>x.id===b.dataset.id); falar(`Recado de ${r.de}: ${r.texto}`); pToast("Lendo em voz alta…"); break; }
+    case "audio": { p.media={tipo:"audio", id:b.dataset.id}; renderPanel(); const r=S.recados.find(x=>x.id===b.dataset.id); falar(r.texto); requestAnimationFrame(()=>{const i=document.getElementById("abar"); if(i){ requestAnimationFrame(()=>{i.style.width="100%";}); }}); break; }
+    case "foto": { const r=S.recados.find(x=>x.id===b.dataset.id); p.media={tipo:"foto", k:r.foto}; renderPanel(); break; }
+    case "fotoK": p.media={tipo:"foto", k:b.dataset.k}; renderPanel(); break;
+    case "fecharMedia": p.media=null; try{speechSynthesis.cancel();}catch(_){} renderPanel(); break;
+    case "responder": s.respId=b.dataset.id||null; s.envResp=null; renderPanel(); break;
+    case "pronto": { const id=b.dataset.id, t=b.dataset.t; s.respId=null; pToast("Enviando…");
+      enviarComRede(()=>{ const r=S.recados.find(x=>x.id===id); r.resp=t; s.envResp=null; pToast("Resposta enviada."); notificarApp("recados", `Sua mãe respondeu ao recado`, `“${t}”`, "A1"); },
+                    ()=>{ s.envResp=id; s.envTexto=t; P().toast=null; renderPanel(); }); break; }
+    case "verProposta": pGo("P4",{id:b.dataset.id}); break;
+    /* P2 */
+    case "ditar": s.mode = s.mode||"escolha"; abrirVoz(); break;
+    case "p2pronto": s.mode="conferir"; s.texto=PRONTOS[+b.dataset.i]; s.falado=false; renderPanel(); break;
+    case "cancelar": pGo("P1"); pToast("Recado cancelado. Nada foi enviado."); break;
+    case "lerTexto": falar(s.texto); break;
+    case "corrigir": s.mode="corrigir"; renderPanel(); setTimeout(()=>{const t=document.getElementById("p2txt"); if(t) t.focus();},30); break;
+    case "salvarCorrecao": { const t=document.getElementById("p2txt").value.trim(); if(t) s.texto=t; s.mode="conferir"; renderPanel(); break; }
+    case "voltarConferir": s.mode="conferir"; renderPanel(); break;
+    case "enviarRecado": s.mode="enviando"; renderPanel();
+      enviarComRede(()=>{ S.proprios.unshift({id:"r"+Date.now(), texto:s.texto, hora:"Hoje, "+S.hora, assumido:null, novo:true}); s.mode="ok"; renderPanel();
+        notificarApp("pedidos", "Novo recado da sua mãe", s.texto, "A4", S.proprios[0].id); }, ()=>{ s.mode="erro"; renderPanel(); }); break;
+    /* P3 */
+    case "resp": responderLembrete(b.dataset.r); break;
+    case "adiar": responderLembrete("a"+b.dataset.m); break;
+    case "alarmeVoltar": p.alarm.fase=null; renderPanel(); break;
+    case "fecharAlarme": p.alarm=null; renderPanel(); break;
+    case "lerLembrete": { const l=S.lembretes.find(x=>x.id===p.alarm.id); falar(`${l.titulo}, às ${l.hora}. ${l.desc||""}`); break; }
+    /* P4 */
+    case "impTog": s.imp=!s.imp; renderPanel(); break;
+    case "p4alterar": s.fase="alterar"; s.erro=null; renderPanel(); break;
+    case "p4cancelAlt": { const pp=S.propostas.find(x=>x.id===s.id); s.fase=null; s.data=pp.data; s.hora=pp.hora; s.erro=null; renderPanel(); break; }
+    case "stepD": s.data=addDays(s.data,+b.dataset.n); s.erro=null; renderPanel(); break;
+    case "stepH": s.hora=addMin(s.hora,+b.dataset.n); s.erro=null; renderPanel(); break;
+    case "decidir": decidir(b.dataset.d); break;
+    /* P5 */
+    case "perm": { const k=b.dataset.k, i=b.dataset.i; const tgt = i==="add" ? s.add.perms : s.lista[+i].perms; tgt[k]=!tgt[k]; if(i==="add") guardarAdd(); renderPanel(); break; }
+    case "p5rem": s.remover=+b.dataset.i; renderPanel(); break;
+    case "p5remNo": s.remover=null; renderPanel(); break;
+    case "p5remOk": s.lista.splice(+b.dataset.i,1); s.remover=null; renderPanel(); break;
+    case "p5add": s.add={nome:"",tel:"",perms:{recados:true,lembretes:false,respostas:false}}; s.erro=null; renderPanel(); break;
+    case "p5addCancel": s.add=null; s.erro=null; renderPanel(); break;
+    case "p5addOk": { guardarAdd(); const dig=s.add.tel.replace(/\D/g,"");
+      if(!s.add.nome.trim()){ s.erro="Falta o nome da pessoa."; renderPanel(); break; }
+      if(dig.length<10||dig.length>11){ s.erro="O telefone está incompleto. Confira o DDD e os números."; renderPanel(); break; }
+      s.lista.push({id:"f"+Date.now(), nome:s.add.nome.trim(), rel:"família", tel:s.add.tel, perms:s.add.perms}); s.add=null; s.erro=null; renderPanel(); break; }
+    case "p5salvar": s.fase="enviando"; renderPanel();
+      enviarComRede(()=>{ S.familia=s.lista; s.fase="ok"; renderPanel(); renderApp(); }, ()=>{ s.fase=null; s.erro="Não foi possível avisar o aplicativo da família. Confira a internet e toque em Salvar de novo."; renderPanel(); }); break;
+    /* P6 */
+    case "escala": S.prefs.escala=[1,1.15,1.3][+b.dataset.i]; renderPanel(); break;
+    case "vol": S.prefs.volume=Math.max(1,Math.min(5,S.prefs.volume+ +b.dataset.n)); renderPanel(); break;
+    case "testeSom": falar("Este é o volume dos avisos."); break;
+    case "np": S.prefs[b.dataset.w]=addMin(S.prefs[b.dataset.w],+b.dataset.n); renderPanel(); break;
+    case "prazo": S.prefs.prazo=Math.max(15,Math.min(120,S.prefs.prazo+ +b.dataset.n)); renderPanel(); break;
+    case "palavra": S.prefs.palavra=!S.prefs.palavra; renderPanel(); break;
+    case "novoCodigo": S.codigo=String(Math.floor(100000+Math.random()*900000)).replace(/(\d{3})(\d{3})/,"$1 $2"); S.codigoPendente=true; s.fase=null; renderPanel(); break;
+    case "p6ok": if(S.codigoPendente){ s.fase="semvinculo"; } else { s.fase="ok"; } renderPanel(); break;
+    case "semVinculoOk": S.codigoPendente=false; S.codigo=null; s.fase="ok"; renderPanel(); break;
+  }
+});
+document.getElementById("pscreen").addEventListener("input", e=>{ if(e.target.id==="p5nome"||e.target.id==="p5tel") guardarAdd(); });
+function guardarAdd(){ const s=P().sub; if(!s.add) return; const n=document.getElementById("p5nome"), t=document.getElementById("p5tel"); if(n) s.add.nome=n.value; if(t) s.add.tel=t.value; }
+
+/* ======================================================================
+   APLICATIVO DA FAMÍLIA
+   ====================================================================== */
+function A(){ return S.app; }
+function eu(){ return S.familia.find(f=>f.nome===S.appUser); }
+function aGo(scene, sub){ A().scene=scene; A().sub=sub||{}; renderApp(); }
+function aToast(t){ A().toast=t; renderApp(); clearTimeout(aToast._t); aToast._t=setTimeout(()=>{A().toast=null; renderApp();},2800); }
+function notificarApp(tipo, titulo, texto, destino, ref){
+  const map={pedidos:"pedidos", recados:"pedidos", respostas:"respostas", importantes:"importantes"};
+  if(!A().avisos[map[tipo]]) return;
+  if(tipo==="respostas"||tipo==="importantes"){ const f=eu(); if(!f||!f.perms.respostas) return; }
+  A().notif={titulo, texto, destino, ref}; renderApp();
+  clearTimeout(notificarApp._t); notificarApp._t=setTimeout(()=>{A().notif=null; renderApp();},6000);
+}
+const nomeIdoso = ()=> S.appUser==="Olga" ? "sua mãe" : "sua avó";
+const NomeIdoso = ()=> S.appUser==="Olga" ? "Sua mãe" : "Sua avó";
+
+function ahead(t, sub){
+  const back = A().scene==="A1" ? "" : `<button class="aback" type="button" data-a="home" aria-label="Voltar ao início">${IC.back}</button>`;
+  return `<div class="ahead">${back}<div><h3>${esc(t)}</h3>${sub?`<p>${esc(sub)}</p>`:""}</div></div>`;
+}
+function sceneA1(){
+  const f=eu();
+  if(!f) return ahead("Mural da Casa") + `<div class="abody"><div class="acard"><span class="v">Você não participa mais deste mural.</span><span>Dona Glória tirou você da lista de pessoas. Fale com ela se quiser voltar.</span></div></div>`;
+  const livres=S.proprios.filter(m=>!m.assumido);
+  const novasResp=S.historico.filter(h=>h.novo || (h.conf && !h.vista));
+  const att=[];
+  livres.forEach(m=>att.push(`<button class="acard" type="button" data-a="pedido" data-id="${m.id}"><span class="k">Pedido de ${S.appUser==="Olga"?"Dona Glória":"vó Glória"} · ${esc(m.hora)}</span><span class="v">“${esc(m.texto)}”</span><span class="st free">Ninguém assumiu ainda</span></button>`));
+  if(f.perms.respostas) novasResp.forEach(h=>att.push(`<button class="acard" type="button" data-a="go" data-s="A5"><span class="k">Resposta</span><span class="v">${esc(h.titulo)}</span>${stHist(h)}</button>`));
+  const nPed=livres.length;
+  return ahead("Mural da Casa", A().painel) + `<div class="abody">
+    <div><p class="k" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 8px">O que pede sua atenção</p>
+    <div style="display:flex;flex-direction:column;gap:8px">${att.join("")||`<p class="empty">Nada pedindo sua atenção agora.</p>`}</div></div>
+    <div class="tiles">
+      <button class="tile" type="button" data-a="go" data-s="A2">${IC.msg}Deixar recado</button>
+      <button class="tile" type="button" data-a="go" data-s="A3">${IC.cal}Propor lembrete</button>
+      <button class="tile" type="button" data-a="go" data-s="A4">${IC.hand}Pedidos ${nomeIdoso()==="sua mãe"?"da mãe":"da vó"}${nPed?`<span class="n">${nPed}</span>`:""}</button>
+      <button class="tile" type="button" data-a="go" data-s="A5">${IC.check}Respostas</button>
+      <button class="tile" type="button" data-a="go" data-s="A6" style="grid-column:1/-1;flex-direction:row;align-items:center">${IC.gear}Configurar o aplicativo</button>
+    </div></div>`;
+}
+function stHist(h){
+  const m={aceita:["ok","Aceita"],alterada:["ok","Aceita com outro horário"],recusada:["no","Recusada"],adiada:["","Ela vai decidir depois"]}[h.estado]||["","Aguardando"];
+  let conf="";
+  if(h.imp){ conf = h.conf==="confirmado"?`<span class="st ok">Importante · confirmou ${esc(h.confTxt||"")}</span>`: h.conf==="naovou"?`<span class="st no">Importante · respondeu que não vai</span>`: h.conf==="sem"?`<span class="st no">Importante · não confirmou</span>`: h.conf==="adiado"?`<span class="st">Importante · ${esc(h.confTxt)}</span>`:`<span class="st">Importante · ainda não chegou a hora</span>`; }
+  return `<div class="chips"><span class="st ${m[0]}">${m[1]}</span>${conf}</div>`;
+}
+
+function sceneA2(){
+  const s=A().sub; const f=eu();
+  if(!f || !f.perms.recados) return ahead("Deixar recado")+`<div class="abody"><div class="acard"><span class="v">Você não pode deixar recados neste mural.</span><span>Dona Glória não liberou essa permissão para você.</span></div></div>`;
+  if(s.fase==="enviando") return ahead("Deixar recado")+`<div class="abody"><p class="empty">Enviando…</p></div>`;
+  s.texto = s.texto ?? "";
+  const audio = s.rec ? `<div class="rec"><span class="dot" aria-hidden="true"></span><span style="flex:1">Gravando… 0:0${s.seg||0}</span><button class="abtn warn" style="width:auto" type="button" data-a="pararGrav">Parar</button></div>` :
+    s.audio ? `<div class="acard"><span class="k">Áudio · ${s.audio.dur}</span><span class="v">“${esc(s.audio.transcr)}”</span><span style="font-size:12px;color:var(--muted)">Transcrição automática. Vai aparecer junto com o áudio no painel.</span>
+      <div class="arow"><button class="abtn sec" type="button" data-a="ouvirAudio">▶ Ouvir antes de enviar</button><button class="abtn sec" type="button" data-a="apagarAudio">Apagar</button></div></div>` :
+    `<button class="abtn sec" type="button" data-a="gravar">● Gravar áudio</button>`;
+  const fotos = `<div class="chips">${["almoco","jardim","pia"].map(k=>`<button class="minithumb" type="button" data-a="foto" data-k="${k}" aria-pressed="${s.foto===k?"true":"false"}" aria-label="${FOTOS[k].nome}">${FOTOS[k].svg}</button>`).join("")}</div>`;
+  const tem = s.texto.trim() || s.audio || s.foto;
+  return ahead("Deixar recado", "Aparece no painel da casa por 7 dias") + `<div class="abody">
+    <div class="afield"><label for="a2txt">Texto</label><textarea id="a2txt" class="ain" placeholder="Escreva um recado (opcional)">${esc(s.texto)}</textarea></div>
+    <div class="afield"><label>Áudio</label>${audio}</div>
+    <div class="afield"><label>Foto · toque para anexar</label>${fotos}</div>
+    ${tem?`<div class="afield"><label>Como vai aparecer no painel</label><div class="preview"><span style="font-size:13px"><b>${esc(S.appUser)}</b> · agora</span>${s.texto.trim()?`<span class="pt">${esc(s.texto)}</span>`:""}${s.audio?`<span>▶ Áudio (${s.audio.dur}): “${esc(s.audio.transcr)}”</span>`:""}${s.foto?`<div style="width:120px">${FOTOS[s.foto].svg}</div>`:""}</div></div>`:""}
+    ${s.erro?`<p class="aerr" role="alert">${esc(s.erro)}</p>`:""}
+    <button class="abtn" type="button" data-a="enviarRecado">Enviar recado</button></div>`;
+}
+function sceneA3(){
+  const s=A().sub; const f=eu();
+  if(!f || !f.perms.lembretes) return ahead("Propor lembrete")+`<div class="abody"><div class="acard"><span class="v">Você não pode sugerir lembretes neste mural.</span><span>Dona Glória não liberou essa permissão para você. Se precisar, combine com ela ou com quem já pode sugerir.</span></div><button class="abtn sec" type="button" data-a="go" data-s="A2">Deixar um recado em vez disso</button></div>`;
+  if(!s.f) s.f={titulo:"", desc:"", data:"2026-11-19", hora:"", rep:"Não repete", imp:false};
+  const v=s.f, er=s.erros||{};
+  if(s.fase==="enviando") return ahead("Propor lembrete")+`<div class="abody"><p class="empty">Enviando proposta…</p></div>`;
+  if(s.fase==="conferir") return ahead("Conferir proposta")+`<div class="abody">
+    <p style="margin:0;color:var(--muted)">É assim que a proposta vai aparecer no painel. ${NomeIdoso()} decide se aceita, muda o horário ou recusa.</p>
+    <div class="preview"><span style="font-size:13px"><b>${esc(S.appUser)}</b> sugeriu um lembrete</span><span class="pt" style="font-size:22px">${esc(v.titulo)}</span><span style="font-weight:700">${fmtData(v.data)}, às ${v.hora}</span>${v.desc?`<span>${esc(v.desc)}</span>`:""}<span style="font-size:13px">Repete: ${esc(v.rep)}</span>${v.imp?`<span class="st free" style="font-family:var(--f-ui)">Sugerido como importante</span>`:""}</div>
+    ${v.imp?`<p style="margin:0;font-size:13px;color:var(--muted)">Se ${nomeIdoso()} aceitar a marcação de importante, você recebe só o aviso de que ela confirmou ou não. Nada além disso.</p>`:""}
+    ${s.erro?`<p class="aerr" role="alert">${esc(s.erro)}</p>`:""}
+    <div class="arow"><button class="abtn sec" type="button" data-a="editarProp">Editar</button><button class="abtn" type="button" data-a="enviarProp">Enviar proposta</button></div></div>`;
+  const reps=["Não repete","Todo dia","Toda semana","Todo mês"];
+  return ahead("Propor lembrete", "Quem decide é "+nomeIdoso()) + `<div class="abody">
+    <div class="afield"><label for="a3t">Título *</label><input id="a3t" class="ain" value="${esc(v.titulo)}" placeholder="Ex.: Consulta no cardiologista">${er.titulo?`<span class="aerr">${er.titulo}</span>`:""}</div>
+    <div class="afield"><label for="a3d">Descrição</label><textarea id="a3d" class="ain" placeholder="Endereço, o que levar… (opcional)">${esc(v.desc)}</textarea></div>
+    <div class="arow"><div class="afield"><label for="a3data">Data *</label><input id="a3data" type="date" class="ain" value="${v.data}" min="${HOJE}">${er.data?`<span class="aerr">${er.data}</span>`:""}</div>
+      <div class="afield"><label for="a3hora">Horário *</label><input id="a3hora" type="time" class="ain" value="${v.hora}">${er.hora?`<span class="aerr">${er.hora}</span>`:""}</div></div>
+    <div class="afield"><label for="a3rep">Repetir</label><select id="a3rep" class="ain">${reps.map(r=>`<option${r===v.rep?" selected":""}>${r}</option>`).join("")}</select></div>
+    <button class="atoggle" type="button" data-a="impProp" aria-pressed="${v.imp?"true":"false"}"><span><b>Sugerir como importante</b><br><span style="font-size:12px;color:var(--muted)">Se ${nomeIdoso()} aceitar, você fica sabendo se ela confirmou ou não.</span></span><span class="sw"></span></button>
+    <button class="abtn" type="button" data-a="conferirProp">Conferir proposta</button></div>`;
+}
+function sceneA4(){
+  const s=A().sub;
+  if(s.id){ const m=S.proprios.find(x=>x.id===s.id); if(!m) return ahead("Pedido")+`<div class="abody"><p class="empty">Pedido não encontrado.</p></div>`;
+    if(s.fase==="enviando") return ahead("Pedido")+`<div class="abody"><p class="empty">Confirmando…</p></div>`;
+    if(s.fase==="ocupado") return ahead("Pedido")+`<div class="abody"><div class="acard"><span class="v">${esc(m.assumido.quem)} já assumiu este pedido.</span><span>Ele marcou antes de você${m.assumido.quando?" e vai resolver "+esc(m.assumido.quando.toLowerCase()):""}. Ninguém mais precisa se preocupar com isso.</span></div><button class="abtn sec" type="button" data-a="lista">Ver outros pedidos</button></div>`;
+    const quandos=["Hoje","Amanhã","No fim de semana"];
+    return ahead("Pedido "+(S.appUser==="Olga"?"da mãe":"da vó"), m.hora) + `<div class="abody">
+      <div class="acard"><span class="v" style="font-size:16px">“${esc(m.texto)}”</span>${m.assumido?`<span class="st ok">${m.assumido.quem===S.appUser?"Você assumiu":esc(m.assumido.quem)+" assumiu"}${m.assumido.quando?" · "+esc(m.assumido.quando):""}</span>`:`<span class="st free">Ninguém assumiu ainda</span>`}</div>
+      ${m.assumido?"":`<div class="afield"><label>Quando você consegue? (opcional)</label><div class="chips">${quandos.map(q=>`<button class="chipb" type="button" data-a="quando" data-q="${q}" aria-pressed="${s.quando===q?"true":"false"}">${q}</button>`).join("")}</div></div>
+      ${s.erro?`<p class="aerr" role="alert">${esc(s.erro)}</p>`:""}
+      <button class="abtn" type="button" data-a="assumir">Vou assumir este pedido</button>`}
+      <button class="abtn sec" type="button" data-a="combinar">Combinar com ${nomeIdoso()} (deixar recado)</button></div>`;
+  }
+  const rows=S.proprios.map(m=>`<button class="acard" type="button" data-a="pedido" data-id="${m.id}"><span class="k">${esc(m.hora)}</span><span class="v">“${esc(m.texto)}”</span>${m.assumido?`<span class="st ok">${m.assumido.quem===S.appUser?"Você assumiu":esc(m.assumido.quem)+" assumiu"}${m.assumido.quando?" · "+esc(m.assumido.quando):""}</span>`:`<span class="st free">Ninguém assumiu ainda</span>`}</button>`).join("");
+  return ahead("Pedidos "+(S.appUser==="Olga"?"da mãe":"da vó"), "Quem assumiu cada um")+`<div class="abody">${rows||`<p class="empty">Nenhum pedido.</p>`}</div>`;
+}
+function sceneA5(){
+  const f=eu();
+  if(!f || !f.perms.respostas) return ahead("Respostas")+`<div class="abody"><div class="acard"><span class="v">Você não vê as respostas deste mural.</span><span>Dona Glória escolheu não compartilhar as respostas com você.</span></div></div>`;
+  S.historico.forEach(h=>{h.novo=false; if(h.conf) h.vista=true;});
+  const pend=S.propostas.filter(p=>p.estado==="aguardando").map(p=>`<div class="acard"><span class="k">Proposta de ${esc(p.de)}</span><span class="v">${esc(p.titulo)}</span><span style="font-size:13px">${fmtData(p.data)}, ${p.hora}</span><span class="st">${p.adiada?"Ela vai decidir depois":"Aguardando "+nomeIdoso()}</span></div>`).join("");
+  const hist=S.historico.map(h=>`<div class="acard"><span class="v">${esc(h.titulo)}</span><span style="font-size:13px">${fmtData(h.data)}, ${h.hora}</span>${stHist(h)}</div>`).join("");
+  return ahead("Respostas e confirmações","Sem justificativas, só a decisão")+`<div class="abody">${pend}${hist}</div>`;
+}
+function sceneA6(){
+  const s=A().sub; const av=A().avisos;
+  if(s.fase==="ok") return ahead("Configurar o aplicativo")+`<div class="abody"><div class="acard"><span class="v">Ajustes salvos.</span></div><button class="abtn sec" type="button" data-a="home">Voltar ao início</button></div>`;
+  const L={pedidos:"Pedidos e recados novos",respostas:"Respostas às minhas propostas",importantes:"Lembretes importantes (confirmou ou não)"};
+  return ahead("Configurar o aplicativo")+`<div class="abody">
+    <div class="acard"><span class="k">Ligado ao painel</span><span class="v">${esc(A().painel)}</span></div>
+    <div class="afield"><label for="a6cod">Ligar a um painel · digite o código que aparece no painel</label><div class="arow"><input id="a6cod" class="ain" inputmode="numeric" placeholder="000 000" value="${esc(s.cod||"")}"><button class="abtn sec" style="flex:0 0 auto;width:auto" type="button" data-a="vincular">Ligar</button></div>
+      ${s.erro?`<span class="aerr" role="alert">${esc(s.erro)}</span>`:""}${s.okv?`<span style="color:var(--ok);font-size:12px;font-weight:600">Aplicativo ligado ao painel.</span>`:""}</div>
+    <div class="afield"><label>Me avisar sobre</label>${Object.keys(L).map(k=>`<button class="atoggle" type="button" data-a="aviso" data-k="${k}" aria-pressed="${av[k]?"true":"false"}"><span>${L[k]}</span><span class="sw"></span></button>`).join("")}</div>
+    <p style="margin:0;font-size:12px;color:var(--muted)">O Mural nunca envia estatísticas de uso, localização ou atividade.</p>
+    <button class="abtn" type="button" data-a="salvarAvisos">Salvar ajustes</button></div>`;
+}
+function renderApp(){
+  const a=A(); const el=document.getElementById("ascreen");
+  document.getElementById("applabel").textContent = "Aplicativo · " + S.appUser + (S.appUser==="Olga"?" (filha)":" (neto)");
+  const scenes={A1:sceneA1,A2:sceneA2,A3:sceneA3,A4:sceneA4,A5:sceneA5,A6:sceneA6};
+  el.innerHTML = `<div class="astatus"><span>${S.hora}</span><span>${S.sim.offline?"sem rede":"4G ▮▮▮"}</span></div>` + scenes[a.scene]() +
+    (a.notif?`<button class="anotif" type="button" data-a="notif"><span style="font-size:18px">🏠</span><span><small>Mural da Casa · agora</small><b>${esc(a.notif.titulo)}</b><br>${esc(a.notif.texto)}</span></button>`:"") +
+    (a.toast?`<div class="atoast" role="status">${esc(a.toast)}</div>`:"");
+}
+function lerA3(){ const s=A().sub; if(!s.f) return; const g=id=>document.getElementById(id); if(!g("a3t")) return;
+  s.f.titulo=g("a3t").value; s.f.desc=g("a3d").value; s.f.data=g("a3data").value; s.f.hora=g("a3hora").value; s.f.rep=g("a3rep").value; }
+document.getElementById("ascreen").addEventListener("input", e=>{ const s=A().sub;
+  if(e.target.id==="a2txt"){ s.texto=e.target.value; }
+  if(e.target.id==="a6cod"){ s.cod=e.target.value; }
+});
+document.getElementById("ascreen").addEventListener("change", e=>{ if(["a3data","a3hora","a3rep"].includes(e.target.id)) lerA3(); if(e.target.id==="a2txt") renderApp(); });
+document.getElementById("ascreen").addEventListener("focusout", e=>{ if(e.target.id==="a2txt"){ const s=A().sub; s.texto=e.target.value; setTimeout(renderApp,0);} });
+document.getElementById("ascreen").addEventListener("click", e=>{
+  const b=e.target.closest("[data-a]"); if(!b) return; const a=b.dataset.a; const s=A().sub;
+  if(A().scene==="A3") lerA3();
+  if(A().scene==="A2"){ const t=document.getElementById("a2txt"); if(t) s.texto=t.value; }
+  switch(a){
+    case "home": aGo("A1"); break;
+    case "go": aGo(b.dataset.s); break;
+    case "notif": { const n=A().notif; A().notif=null; if(n.destino==="A4") aGo("A4",{id:n.ref}); else aGo(n.destino); break; }
+    /* A2 */
+    case "gravar": s.rec=true; s.seg=0; renderApp(); clearInterval(s._iv); s._iv=setInterval(()=>{ if(!A().sub.rec){clearInterval(s._iv);return;} s.seg=Math.min(9,(s.seg||0)+1); renderApp(); },1000); break;
+    case "pararGrav": clearInterval(s._iv); s.rec=false; s.audio={dur:"0:0"+Math.max(3,s.seg||3), transcr: S.appUser==="Levi"?"Vó, sábado eu passo aí e levo, e a gente almoça junto?":"Mãe, chego aí no feriado. Já separei os remédios."}; s.erro=null; renderApp(); break;
+    case "ouvirAudio": falar(s.audio.transcr); aToast("Tocando o áudio…"); break;
+    case "apagarAudio": s.audio=null; renderApp(); break;
+    case "foto": s.foto = s.foto===b.dataset.k ? null : b.dataset.k; s.erro=null; renderApp(); break;
+    case "enviarRecado": {
+      if(!(s.texto||"").trim() && !s.audio && !s.foto){ s.erro="O recado está vazio. Escreva um texto, grave um áudio ou escolha uma foto."; renderApp(); break; }
+      const env={texto:(s.texto||"").trim(), audio:s.audio, foto:s.foto}; s.fase="enviando"; renderApp();
+      enviarComRede(()=>{ S.recados.unshift({id:"m"+Date.now(), de:S.appUser, rel:S.appUser==="Olga"?"filha":"neto", hora:"Hoje, "+S.hora, texto:env.texto || (env.audio?env.audio.transcr:"Mandou uma foto"), audio:env.audio?{dur:env.audio.dur}:null, foto:env.foto, resp:null});
+          if(env.audio && !env.texto) S.recados[0].texto=env.audio.transcr;
+          aGo("A1"); aToast("Recado enviado. Já está no painel da casa."); renderPanel(); },
+        ()=>{ s.fase=null; s.erro="Sem conexão. O recado não foi enviado. Confira a internet e toque em Enviar de novo."; renderApp(); }); break; }
+    /* A3 */
+    case "impProp": s.f.imp=!s.f.imp; renderApp(); break;
+    case "conferirProp": { const v=s.f, er={};
+      if(!v.titulo.trim()) er.titulo="Falta o título."; if(!v.data) er.data="Falta a data."; if(!v.hora) er.hora="Falta o horário.";
+      if(v.data && v.hora && (v.data+v.hora) < (HOJE+S.hora)) er.hora="Esse horário já passou.";
+      s.erros=er; if(Object.keys(er).length){ renderApp(); break; } s.fase="conferir"; s.erro=null; renderApp(); break; }
+    case "editarProp": s.fase=null; renderApp(); break;
+    case "enviarProp": s.fase="enviando"; renderApp();
+      enviarComRede(()=>{ const v=s.f; S.propostas.push({id:"p"+Date.now(), de:S.appUser, titulo:v.titulo.trim(), desc:v.desc.trim(), data:v.data, hora:v.hora, rep:v.rep, sugImp:v.imp, estado:"aguardando", impFinal:false});
+          aGo("A1"); aToast("Proposta enviada. Aguardando a resposta de "+nomeIdoso()+"."); renderPanel(); },
+        ()=>{ s.fase="conferir"; s.erro="Sem conexão. A proposta não foi enviada. Tente de novo."; renderApp(); }); break;
+    /* A4 */
+    case "pedido": aGo("A4",{id:b.dataset.id}); break;
+    case "lista": aGo("A4"); break;
+    case "quando": s.quando = s.quando===b.dataset.q ? null : b.dataset.q; renderApp(); break;
+    case "assumir": { const m=S.proprios.find(x=>x.id===s.id); s.fase="enviando"; renderApp();
+      enviarComRede(()=>{
+        if(S.sim.outro || m.assumido){ if(!m.assumido) m.assumido={quem:S.appUser==="Levi"?"Olga":"Levi", quando:"Amanhã"}; S.sim.outro=false; renderSim(); s.fase="ocupado"; renderApp(); renderPanel(); return; }
+        m.assumido={quem:S.appUser, quando:s.quando||null}; s.fase=null; renderApp(); aToast("Pedido assumido. A família e o painel já mostram que é com você."); renderPanel(); },
+        ()=>{ s.fase=null; s.erro="Sem conexão. Não deu para assumir agora. Tente de novo."; renderApp(); }); break; }
+    case "combinar": aGo("A2",{texto: S.appUser==="Olga"?"Mãe, ":"Vó, "}); break;
+    /* A6 */
+    case "vincular": { const c=(s.cod||"").replace(/\D/g,""); s.okv=false;
+      if(S.codigo && c===S.codigo.replace(/\D/g,"")){ S.codigoPendente=false; s.erro=null; s.okv=true; renderPanel(); }
+      else s.erro="Código inválido ou vencido. Gere um novo código no painel (Ajustes) e digite de novo.";
+      renderApp(); break; }
+    case "aviso": A().avisos[b.dataset.k]=!A().avisos[b.dataset.k]; renderApp(); break;
+    case "salvarAvisos": s.fase="ok"; renderApp(); break;
+  }
+});
+
+/* ======================================================================
+   CONTROLES DO AVALIADOR
+   ====================================================================== */
+function renderSim(){
+  const t=(k,l)=>`<button class="simt" type="button" data-sim="tog" data-k="${k}" aria-pressed="${S.sim[k]?"true":"false"}"><span class="box"></span>${l}</button>`;
+  document.getElementById("simgrid").innerHTML = `
+    <div class="col"><h3>Tempo</h3>
+      <button class="simb" type="button" data-sim="alarme">Chegar a hora do aviso da consulta (14:00)</button>
+      <button class="simb" type="button" data-sim="remedio">Chegar a hora do remédio (13:00)</button>
+      <button class="simb" type="button" data-sim="prazo">Acabar o prazo de resposta do lembrete</button>
+      <button class="simb" type="button" data-sim="sono">Ninguém mexe no painel (tela em repouso)</button></div>
+    <div class="col"><h3>Falhas</h3>
+      ${t("voz","A próxima fala não é entendida")}
+      ${t("offline","Sem conexão com a internet")}
+      ${t("outro","Outro familiar assume o pedido antes")}</div>
+    <div class="col"><h3>Quem usa o app</h3>
+      <div class="chips"><button class="chipb" type="button" data-sim="user" data-u="Olga" aria-pressed="${S.appUser==="Olga"}">Olga (filha)</button><button class="chipb" type="button" data-sim="user" data-u="Levi" aria-pressed="${S.appUser==="Levi"}">Levi (neto)</button></div>
+      <p style="margin:4px 0 0;font-size:12px;color:var(--muted)">O Levi não pode sugerir lembretes nem ver respostas, conforme as permissões que a Dona Glória deu.</p></div>`;
+}
+function dispararAlarme(id, hora){
+  const l=S.lembretes.find(x=>x.id===id); if(!l) return;
+  if(l.resp){ l.resp=null; }
+  S.hora=hora; P().sleep=false; P().voice=null; P().media=null; P().alarm={id}; renderPanel(); renderApp();
+  falar(`Lembrete: ${l.titulo}, às ${l.hora}.`);
+}
+document.getElementById("simgrid").addEventListener("click", e=>{
+  const b=e.target.closest("[data-sim]"); if(!b) return; const a=b.dataset.sim;
+  if(a==="tog"){ S.sim[b.dataset.k]=!S.sim[b.dataset.k]; renderSim(); renderApp(); return; }
+  if(a==="alarme") dispararAlarme("L2","14:00");
+  if(a==="remedio") dispararAlarme("L1","13:00");
+  if(a==="prazo"){ const al=P().alarm; const id = al ? al.id : "L2"; const l=S.lembretes.find(x=>x.id===id);
+    if(!al){ S.hora="14:00"; P().alarm={id}; }
+    S.hora=addMin(S.hora,S.prefs.prazo); l.resp="sem"; P().alarm.fase="sem";
+    const h=S.historico.find(x=>x.lid===l.id); if(l.imp && h){ h.conf="sem"; h.vista=false; notificarApp("importantes", `${l.titulo}`, `${NomeIdoso()} não confirmou o lembrete importante.`, "A5"); }
+    renderPanel(); renderApp(); }
+  if(a==="sono"){ P().sleep=true; P().alarm=null; P().voice=null; P().media=null; renderPanel(); }
+  if(a==="user"){ S.appUser=b.dataset.u; A().scene="A1"; A().sub={}; A().notif=null; renderSim(); renderApp(); }
+});
+
+/* ---------- Visões e reinício ---------- */
+document.querySelector(".views").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  if(b.dataset.reset){ try{speechSynthesis.cancel();}catch(_){} S=inicial(); renderAll(); return; }
+  S.view=b.dataset.view; const st=document.getElementById("stage");
+  st.className="stage"+(S.view==="panel"?" only-panel":S.view==="app"?" only-app":"");
+  document.querySelectorAll(".views [data-view]").forEach(x=>x.setAttribute("aria-pressed", x===b?"true":"false"));
+});
+function renderAll(){ renderPanel(); renderApp(); renderSim(); }
+renderAll();
+})();
+</script>
