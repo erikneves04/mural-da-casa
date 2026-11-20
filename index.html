@@ -67,6 +67,7 @@ header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-
 .badge{display:inline-flex;align-items:center;gap:.3em;font-size:.8em;font-weight:700;padding:.15em .55em;border-radius:999px;background:var(--imp-bg);color:var(--imp);width:fit-content}
 .badge.ok{background:var(--accent-soft);color:var(--accent)}
 .badge.gray{background:var(--chip);color:var(--muted)}
+.badge.big{font-size:1.05em;padding:.25em .7em}
 .pacts{display:flex;flex-wrap:wrap;gap:.45em}
 .pbtn{border:2px solid var(--ink);background:var(--card);border-radius:.6em;padding:.45em .85em;font-weight:700;font-size:1em;min-height:2.6em}
 .pbtn.big{font-size:1.25em;padding:.6em 1.1em;min-height:3em}
@@ -92,7 +93,7 @@ header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-
 .stepper{display:flex;align-items:center;gap:.6em;flex-wrap:wrap}
 .stepper .val{min-width:7em;text-align:center;font-size:1.4em;font-weight:700;font-variant-numeric:tabular-nums}
 .sq{width:2.6em;height:2.6em;border-radius:.6em;border:2px solid var(--ink);background:var(--card);font-size:1.3em;font-weight:700}
-.toggle{display:flex;align-items:center;gap:.6em;background:var(--card);border:2px solid var(--line);border-radius:.6em;padding:.45em .7em;font-weight:700}
+.toggle{display:flex;align-items:center;gap:.6em;text-align:left;background:var(--card);border:2px solid var(--line);border-radius:.6em;padding:.45em .7em;font-weight:700}
 .toggle .sw{width:2.6em;height:1.5em;border-radius:999px;background:var(--chip);position:relative;flex:none;border:1px solid var(--line)}
 .toggle .sw::after{content:"";position:absolute;top:.12em;left:.15em;width:1.15em;height:1.15em;border-radius:50%;background:var(--muted);transition:left .15s}
 .toggle[aria-pressed="true"] .sw{background:var(--ok);border-color:var(--ok)}
@@ -296,8 +297,12 @@ const IC = {
    PAINEL DA CASA
    ====================================================================== */
 function P(){ return S.panel; }
-function pGo(scene, sub){ const p=P(); p.scene=scene; p.sub=sub||{}; p.voice=null; renderPanel(); }
-function pToast(t){ P().toast=t; renderPanel(); clearTimeout(pToast._t); pToast._t=setTimeout(()=>{P().toast=null; renderPanel();},2600); }
+function pGo(scene, sub){ const p=P(); S.proprios.forEach(m=>m.destaque=false); p.scene=scene; p.sub=sub||{}; p.voice=null; renderPanel(); }
+function pToast(t, ms){ P().toast=t; renderPanel(); clearTimeout(pToast._t); pToast._t=setTimeout(()=>{P().toast=null; renderPanel();},ms||2600); }
+/* R5: quando alguém assume um recado da Dona Glória, o painel avisa na tela e em voz alta, e o recado fica destacado. */
+function avisarAssumido(m){ m.destaque=true; const q=m.assumido.quem;
+  const t=`${q} vai resolver${m.assumido.quando?" ("+m.assumido.quando.toLowerCase()+")":""}: ${m.texto}`;
+  if(!P().sleep){ pToast(t, 7000); falar(t); } else renderPanel(); }
 function lembretesHoje(){ return S.lembretes.filter(l=>l.data===HOJE).sort((a,b)=>a.hora.localeCompare(b.hora)); }
 function lembretesProx(){ return S.lembretes.filter(l=>l.data>HOJE).sort((a,b)=>(a.data+a.hora).localeCompare(b.data+b.hora)); }
 function propPend(){ return S.propostas.filter(p=>p.estado==="aguardando"); }
@@ -333,14 +338,14 @@ function sceneP1(){
     ${sub && !r.resp ? `<div class="pacts" role="group" aria-label="Respostas prontas">${["Combinado","Obrigada!","Depois eu ligo"].map(t=>`<button class="pbtn acc" type="button" data-p="pronto" data-id="${r.id}" data-t="${t}">${t}</button>`).join("")}<button class="pbtn" type="button" data-p="responder" data-id="">Agora não</button></div>`:""}
     ${P().sub.envResp===r.id?`<div class="alert">Não foi possível enviar a resposta. Sem conexão com a internet. <div class="pacts" style="margin-top:.4em"><button class="pbtn" type="button" data-p="pronto" data-id="${r.id}" data-t="${esc(P().sub.envTexto)}">Tentar de novo</button></div></div>`:""}
     </div>`;}).join("");
-  const meus = S.proprios.map(m=>`<div class="pitem"><span class="t" style="font-weight:400">${esc(m.texto)}</span>
-    ${m.assumido?`<span class="badge ok">${esc(m.assumido.quem)} vai resolver${m.assumido.quando?" · "+esc(m.assumido.quando):""}</span>`:`<span class="badge gray">Ninguém assumiu ainda</span>`}</div>`).join("");
+  const meus = S.proprios.map(m=>`<div class="pitem"${m.destaque?` style="border:2px solid var(--accent)"`:""}><span class="t" style="font-weight:400">${esc(m.texto)}</span>
+    ${m.assumido?`<span class="badge ok big">${m.destaque?"Novo · ":""}${esc(m.assumido.quem)} vai resolver${m.assumido.quando?" · "+esc(m.assumido.quando):""}</span>`:`<span class="badge gray big">Ninguém assumiu ainda</span>`}</div>`).join("");
   const fotos = ["prova","jardim"].concat(S.recados.some(r=>r.foto==="almoco")?["almoco"]:[]).map(f=>`<button class="thumb" type="button" data-p="fotoK" data-k="${f}" aria-label="Abrir foto: ${FOTOS[f].nome}">${FOTOS[f].svg}</button>`).join("");
   return `<div class="pgrid">
     <div class="psec" style="display:flex;flex-direction:column;gap:1em">
       <div><h2>Hoje</h2><div class="plist">${hoje||`<p class="s">Nada marcado para hoje.</p>`}</div></div>
-      ${prox?`<div><h2>Próximos dias</h2><div class="plist">${prox}</div></div>`:""}
       <div><h2>Seus recados para a família</h2><div class="plist">${meus||`<p class="s">Você não deixou recados.</p>`}</div></div>
+      ${prox?`<div><h2>Próximos dias</h2><div class="plist">${prox}</div></div>`:""}
     </div>
     <div class="psec" style="display:flex;flex-direction:column;gap:1em">
       <div><h2>Recados da família</h2><div class="plist">${rec||`<p class="s">Nenhum recado novo.</p>`}</div></div>
@@ -358,11 +363,12 @@ const PRONTOS = ["Estou bem, não precisam se preocupar.","Pode me ligar quando 
 function sceneP2(){
   const s=P().sub; const m=s.mode||"escolha";
   if(m==="escolha") return `<div class="form">
-      <p class="huge" style="font-size:1.5em">Como quer deixar o recado?</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1em;flex-wrap:wrap">
+        <p class="huge" style="font-size:1.5em;margin:0">Como quer deixar o recado?</p>
+        <button class="pbtn stop" type="button" data-p="cancelar">Cancelar</button></div>
       <div class="pacts"><button class="pbtn big acc" type="button" data-p="ditar">${IC.mic.replace('<svg','<svg width="1.1em" height="1.1em" style="vertical-align:-.15em"')} Falar o recado</button></div>
       <p class="note">Ou toque em um recado pronto:</p>
-      <div class="choices">${PRONTOS.map((t,i)=>`<button class="choice" type="button" data-p="p2pronto" data-i="${i}">${esc(t)}</button>`).join("")}</div>
-      <div class="pacts"><button class="pbtn stop" type="button" data-p="cancelar">Cancelar</button></div></div>`;
+      <div class="choices">${PRONTOS.map((t,i)=>`<button class="choice" type="button" data-p="p2pronto" data-i="${i}">${esc(t)}</button>`).join("")}</div></div>`;
   if(m==="conferir") return `<div class="form">
       <p class="note" style="font-size:1.05em">Confira o recado antes de enviar. Se estiver errado, fale de novo ou corrija.</p>
       <div class="transcr" aria-live="polite">${esc(s.texto)}</div>
@@ -427,10 +433,14 @@ function sceneP4(){
     </div>
     ${alter?`<div class="form" aria-label="Escolher nova data e horário">
         <div class="stepper"><span style="min-width:5em;font-weight:700">Dia</span><button class="sq" type="button" data-p="stepD" data-n="-1" aria-label="Dia anterior">−</button><span class="val">${fmtData(s.data)}</span><button class="sq" type="button" data-p="stepD" data-n="1" aria-label="Próximo dia">+</button></div>
-        <div class="stepper"><span style="min-width:5em;font-weight:700">Horário</span><button class="sq" type="button" data-p="stepH" data-n="-30" aria-label="Meia hora antes">−</button><span class="val">${s.hora}</span><button class="sq" type="button" data-p="stepH" data-n="30" aria-label="Meia hora depois">+</button></div>
+        <div class="stepper"><span style="min-width:5em;font-weight:700">Horário</span><button class="sq" type="button" data-p="stepH" data-n="-30" aria-label="Meia hora antes">−</button><span class="val">${s.hora}</span><button class="sq" type="button" data-p="stepH" data-n="30" aria-label="Meia hora depois">+</button><span class="note" style="font-size:1em">muda de 30 em 30 minutos</span></div>
+        <div class="stepper"><span style="min-width:5em;font-weight:700">Atalhos</span>${[["Manhã","08:00"],["Tarde","14:00"],["Noite","19:00"]].map(([n,h])=>`<button class="pbtn${s.hora===h?" acc":""}" type="button" data-p="setH" data-h="${h}" aria-pressed="${s.hora===h?"true":"false"}">${n} · ${h}</button>`).join("")}</div>
         ${s.erro?`<div class="alert">${esc(s.erro)}</div>`:""}
       </div>`:""}
-    ${p.sugImp?`<button class="toggle" type="button" data-p="impTog" aria-pressed="${s.imp?"true":"false"}"><span class="sw"></span><span>Marcar como importante<br><span class="note" style="font-weight:400">${esc(p.de)} sugeriu. Se ligar, ${esc(p.de)} fica sabendo se você confirmou ou não. Você pode desligar depois.</span></span></button>`:""}
+    ${p.sugImp?`<div class="pitem" style="border-width:2px;gap:.5em">
+      <span style="font-size:1.1em">${esc(p.de)} sugeriu marcar como <b>importante</b>. Se ligar, na hora do lembrete ${esc(p.de)} fica sabendo só se você confirmou ou não. Você pode desligar depois.</span>
+      <button class="pbtn big${s.imp?" go":""}" type="button" data-p="impTog" aria-pressed="${s.imp?"true":"false"}" style="text-align:left;margin-right:4.5em">${s.imp?"✓ ":""}Avisar ${esc(p.de)} se eu não confirmar: <span style="text-decoration:underline">${s.imp?"Ligado":"Desligado"}</span></button>
+    </div>`:""}
     <div class="pacts">
       ${alter?`<button class="pbtn big go" type="button" data-p="decidir" data-d="alterada">Aceitar com o novo horário</button><button class="pbtn big" type="button" data-p="p4cancelAlt">Voltar</button>`:
       `<button class="pbtn big go" type="button" data-p="decidir" data-d="aceita">Aceitar</button>
@@ -497,12 +507,13 @@ function sceneP6(){
 function voiceSheet(){
   const v=P().voice; if(!v) return "";
   const head = v.erro ? `<div class="alert">Não entendi. Fale de novo ou use os botões da tela.</div>` :
-    `<div class="listen"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Estou ouvindo…</div>`;
+    `<div class="listen"><span class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Estou ouvindo…</div>
+     <p style="font-size:1.15em;margin:0">${P().scene==="P2"&&!P().alarm?"Pode falar. Quando você parar de falar, eu mostro o texto para você conferir.":"Pode falar. Quando você parar de falar, eu faço o que você pediu."}</p>`;
   return `<div class="overlay" role="dialog" aria-label="Microfone ligado"><div class="sheet">
     ${head}
     <p class="note" style="font-size:1em">Simulação: toque no que a pessoa falaria.</p>
     <div class="choices">${v.opts.map((o,i)=>`<button class="choice" type="button" data-p="fala" data-i="${i}">“${esc(o.dito)}”</button>`).join("")}</div>
-    <div class="pacts"><button class="pbtn" type="button" data-p="fecharVoz">Desligar o microfone</button></div>
+    <div class="pacts"><button class="pbtn" type="button" data-p="fecharVoz">Cancelar e desligar o microfone</button></div>
   </div></div>`;
 }
 function abrirVoz(){
@@ -558,8 +569,12 @@ function decidir(d){
   }, 900);
 }
 
+/* R3: quando a tela do painel muda, toques nos primeiros 600 ms são ignorados (evita toque duplo acidental). */
+let pUltimaTela="", pBloqueioAte=0;
+function pChaveTela(){ const p=P(), s=p.sub||{}; return [p.scene,s.mode,s.fase,p.voice?"voz":"",p.alarm?"al"+(p.alarm.fase||""):"",p.media?"m":"",p.sleep?"z":""].join("|"); }
 function renderPanel(){
   const p=P(); const el=document.getElementById("pscreen");
+  const chave=pChaveTela(); if(chave!==pUltimaTela){ pUltimaTela=chave; pBloqueioAte=Date.now()+600; }
   el.style.setProperty("--pscale", S.prefs.escala);
   if(p.sleep){ el.innerHTML = `<button class="sleep" type="button" data-p="acordar" aria-label="Tocar para acordar o painel"><b>${S.hora}</b><span style="font-size:1.3em">terça, 17 de novembro</span><span class="ph">${FOTOS.almoco.svg}</span><span style="opacity:.7">Toque na tela para ver o mural</span></button>`; return; }
   let title="", body="";
@@ -584,7 +599,7 @@ function mediaView(){
 }
 
 document.getElementById("pscreen").addEventListener("click", e=>{
-  const b=e.target.closest("[data-p]"); if(!b) return; const a=b.dataset.p; const p=P(); const s=p.sub;
+  const b=e.target.closest("[data-p]"); if(!b) return; if(Date.now()<pBloqueioAte) return; const a=b.dataset.p; const p=P(); const s=p.sub;
   switch(a){
     case "home": pGo("P1"); break;
     case "go": pGo(b.dataset.s); break;
@@ -626,6 +641,7 @@ document.getElementById("pscreen").addEventListener("click", e=>{
     case "p4cancelAlt": { const pp=S.propostas.find(x=>x.id===s.id); s.fase=null; s.data=pp.data; s.hora=pp.hora; s.erro=null; renderPanel(); break; }
     case "stepD": s.data=addDays(s.data,+b.dataset.n); s.erro=null; renderPanel(); break;
     case "stepH": s.hora=addMin(s.hora,+b.dataset.n); s.erro=null; renderPanel(); break;
+    case "setH": s.hora=b.dataset.h; s.erro=null; renderPanel(); break;
     case "decidir": decidir(b.dataset.d); break;
     /* P5 */
     case "perm": { const k=b.dataset.k, i=b.dataset.i; const tgt = i==="add" ? s.add.perms : s.lista[+i].perms; tgt[k]=!tgt[k]; if(i==="add") guardarAdd(); renderPanel(); break; }
@@ -682,7 +698,7 @@ function sceneA1(){
   const livres=S.proprios.filter(m=>!m.assumido);
   const novasResp=S.historico.filter(h=>h.novo || (h.conf && !h.vista));
   const att=[];
-  livres.forEach(m=>att.push(`<button class="acard" type="button" data-a="pedido" data-id="${m.id}"><span class="k">Pedido de ${S.appUser==="Olga"?"Dona Glória":"vó Glória"} · ${esc(m.hora)}</span><span class="v">“${esc(m.texto)}”</span><span class="st free">Ninguém assumiu ainda</span></button>`));
+  livres.forEach(m=>att.push(`<button class="acard" type="button" data-a="pedido" data-id="${m.id}"><span class="k">Pedido de ${S.appUser==="Olga"?"Dona Glória":"vó Glória"} · ${esc(m.hora)}</span><span class="v">“${esc(m.texto)}”</span><span style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="st free">Ninguém assumiu ainda</span><span style="font-size:13px;font-weight:700;color:var(--accent)">Ver e assumir ›</span></span></button>`));
   if(f.perms.respostas) novasResp.forEach(h=>att.push(`<button class="acard" type="button" data-a="go" data-s="A5"><span class="k">Resposta</span><span class="v">${esc(h.titulo)}</span>${stHist(h)}</button>`));
   const nPed=livres.length;
   return ahead("Mural da Casa", A().painel) + `<div class="abody">
@@ -834,8 +850,8 @@ document.getElementById("ascreen").addEventListener("click", e=>{
     case "quando": s.quando = s.quando===b.dataset.q ? null : b.dataset.q; renderApp(); break;
     case "assumir": { const m=S.proprios.find(x=>x.id===s.id); s.fase="enviando"; renderApp();
       enviarComRede(()=>{
-        if(S.sim.outro || m.assumido){ if(!m.assumido) m.assumido={quem:S.appUser==="Levi"?"Olga":"Levi", quando:"Amanhã"}; S.sim.outro=false; renderSim(); s.fase="ocupado"; renderApp(); renderPanel(); return; }
-        m.assumido={quem:S.appUser, quando:s.quando||null}; s.fase=null; renderApp(); aToast("Pedido assumido. A família e o painel já mostram que é com você."); renderPanel(); },
+        if(S.sim.outro || m.assumido){ let novo=false; if(!m.assumido){ m.assumido={quem:S.appUser==="Levi"?"Olga":"Levi", quando:"Amanhã"}; novo=true; } S.sim.outro=false; renderSim(); s.fase="ocupado"; renderApp(); if(novo) avisarAssumido(m); else renderPanel(); return; }
+        m.assumido={quem:S.appUser, quando:s.quando||null}; s.fase=null; renderApp(); aToast("Pedido assumido. A família e o painel já mostram que é com você."); avisarAssumido(m); },
         ()=>{ s.fase=null; s.erro="Sem conexão. Não deu para assumir agora. Tente de novo."; renderApp(); }); break; }
     case "combinar": aGo("A2",{texto: S.appUser==="Olga"?"Mãe, ":"Vó, "}); break;
     /* A6 */
