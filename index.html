@@ -423,6 +423,11 @@ function sceneP4(){
   if(s.fase==="ok") return `<div class="center"><p class="huge">Decisão registrada.</p><p style="font-size:1.2em">${esc(s.msg)}</p><button class="pbtn big acc" type="button" data-p="home">Voltar ao início</button></div>`;
   if(s.data==null){ s.data=p.data; s.hora=p.hora; s.imp=false; }
   const alter = s.fase==="alterar";
+  /* R1: bloco do aviso de importante. No modo de alteração ele vem depois dos botões, para "Aceitar com o novo horário" ficar visível sem rolar. */
+  const impBlock = (p.sugImp?`<div class="pitem" style="border-width:2px;gap:.5em">
+      <span style="font-size:1.1em">${esc(p.de)} sugeriu marcar como <b>importante</b>. Se ligar, na hora do lembrete ${esc(p.de)} fica sabendo só se você confirmou ou não. Você pode desligar depois.</span>
+      <button class="pbtn big${s.imp?" go":""}" type="button" data-p="impTog" aria-pressed="${s.imp?"true":"false"}" style="text-align:left;margin-right:4.5em">${s.imp?"✓ ":""}Avisar ${esc(p.de)} se eu não confirmar: <span style="text-decoration:underline">${s.imp?"Ligado":"Desligado"}</span></button>
+    </div>`:"");
   return `<div class="form">
     <p style="font-size:1.15em;margin:0"><b>${esc(p.de)}</b> sugeriu um lembrete. Você decide se ele entra no seu mural.</p>
     <div class="pitem" style="border-width:2px">
@@ -437,10 +442,7 @@ function sceneP4(){
         <div class="stepper"><span style="min-width:5em;font-weight:700">Atalhos</span>${[["Manhã","08:00"],["Tarde","14:00"],["Noite","19:00"]].map(([n,h])=>`<button class="pbtn${s.hora===h?" acc":""}" type="button" data-p="setH" data-h="${h}" aria-pressed="${s.hora===h?"true":"false"}">${n} · ${h}</button>`).join("")}</div>
         ${s.erro?`<div class="alert">${esc(s.erro)}</div>`:""}
       </div>`:""}
-    ${p.sugImp?`<div class="pitem" style="border-width:2px;gap:.5em">
-      <span style="font-size:1.1em">${esc(p.de)} sugeriu marcar como <b>importante</b>. Se ligar, na hora do lembrete ${esc(p.de)} fica sabendo só se você confirmou ou não. Você pode desligar depois.</span>
-      <button class="pbtn big${s.imp?" go":""}" type="button" data-p="impTog" aria-pressed="${s.imp?"true":"false"}" style="text-align:left;margin-right:4.5em">${s.imp?"✓ ":""}Avisar ${esc(p.de)} se eu não confirmar: <span style="text-decoration:underline">${s.imp?"Ligado":"Desligado"}</span></button>
-    </div>`:""}
+    ${alter?"":impBlock}
     <div class="pacts">
       ${alter?`<button class="pbtn big go" type="button" data-p="decidir" data-d="alterada">Aceitar com o novo horário</button><button class="pbtn big" type="button" data-p="p4cancelAlt">Voltar</button>`:
       `<button class="pbtn big go" type="button" data-p="decidir" data-d="aceita">Aceitar</button>
@@ -448,6 +450,7 @@ function sceneP4(){
        <button class="pbtn big" type="button" data-p="decidir" data-d="adiada">Decidir depois</button>
        <button class="pbtn big stop" type="button" data-p="decidir" data-d="recusada">Recusar</button>`}
     </div>
+    ${alter?impBlock:""}
     ${!alter?`<p class="note">Ninguém pede justificativa: ao recusar, ${esc(p.de)} só vê “recusada”.</p>`:""}
   </div>`;
 }
